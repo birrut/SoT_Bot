@@ -1,0 +1,5 @@
+*.json
+*.png
+*.jpeg
+config.py
+nohup.out
