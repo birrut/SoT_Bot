@@ -9,5 +9,7 @@ gp takes no arguments. What should I do if somebody supplies some?
 
 guild['chatChannel1Id']????
 
+Check log to see if we are using all the helper functions
+
 
 

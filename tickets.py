@@ -23,17 +23,13 @@ class Tickets(commands.Cog):
     """Handles all the commands for managing daily tickets"""
     def __init__(self, bot):
         self.bot = bot
-        self.write = True
         self.schedule_ticket_call.start()
-        #self.test = True
-        self.test = False
         #At some point, this should be in a config file
         self.server_list = ['884464695476625428', '888611226593136690']
         self.server_data_list = []
         for server in self.server_list:
             self.server_data = {}
             self.server_data['server'] = server
-            #self.server_data['last_saved_time'] = self.get_last_saved_time(server)
             if server == '888611226593136690':
                 self.server_data['channel'] = '888611287112749106'
             elif server == '884464695476625428':
@@ -107,6 +103,7 @@ class Tickets(commands.Cog):
 
 
     def total_format(self, number):
+        """Takes an int and formats it as a decimal string with letter to simulate exponents"""
         f_list = ['', 'k', 'm']
         mag = 0
         while number > 1000:
@@ -299,7 +296,7 @@ class Tickets(commands.Cog):
 
 
 
-    #We can't really use Bobba's bot format anymore, so I think this is totally useles
+    # This doesn't have gp, and we would need to get ID's from json and match with names from Bobba's Bot
     #@bot.listen('on_message')
     #@commands.Cog.listener("on_message")
     async def on_message(self, message):
@@ -352,9 +349,6 @@ class Tickets(commands.Cog):
 
         read_file = 'data/' + str(channel.guild.id) + "guild_data.json"
         write_file = 'data/' + str(channel.guild.id) + ".json"
-###################################
-        #This is for testing only. Be sure to remove
-        #date = date - datetime.timedelta(days=1)
         
         member_list = []
         out_dict = {}
@@ -435,17 +429,6 @@ class Tickets(commands.Cog):
         if avg > avg_tickets:
             await channel.send("New average record!")
         #await channel.send(out_str)
-
-
-
-    #@commands.command(name="ticket_test")
-    async def ticket_test(self, ctx):
-       channel = ctx.channel
-       today = datetime.datetime.now()
-       #date = today - datetime.timedelta(hours=3)
-       date = today
-       await self.get_daily_average(channel, date)
-
 
     @commands.command(name="history")
     async def history(self, ctx, *args):
@@ -626,7 +609,6 @@ class Tickets(commands.Cog):
         await ctx.send(file=image, embed=emb)
 
 
-    #@bot.command(name="average_history")
     @commands.command(name="average_history")
     async def average_list(self, ctx):
         """returns the total average with a graph. 
@@ -769,33 +751,6 @@ class Tickets(commands.Cog):
         await self.get_daily_average(channel, date)
 
 
-    async def UNUSED_schedule_ticket_call(self):
-        print ("in schedule")
-        #This should be a few seconds before guild res
-        guild_reset_time = datetime.time(hour = 17, minute = 30)
-        #guild_reset_time = datetime.time(hour = 21, minute = 52)
-
-        self.reset_time = datetime.datetime.combine(datetime.date.today(), guild_reset_time)
-        self.run_time = self.reset_time - datetime.timedelta(minutes=1, seconds=30)
-        now = datetime.datetime.now()
-        #print (now, ' > ', self.run_time, ' && ', self.last_run.day, ' != ', now.day)
-        for server in self.server_data_list:
-            channel_number = int(server['channel'])
-            channel = self.bot.get_channel(channel_number)
-            self.channel = channel
-            #print (now, ' > ', self.run_time, ' && ', now, ' < ', self.reset_time)
-            if now > self.run_time and now < self.reset_time:
-                print ('we should run command now')
-                try:
-                    #await channel.send('we should run the check tickets command now!')
-                    await self.check_tickets(channel=channel)
-                except AttributeError as e:
-                    print ('maybe wrong guild? This is in the if statement')
-                    raise e
-            # This only works because my server is first in the list
-            if self.test:
-                break
-
 
     @tasks.loop(hours=24)
     async def schedule_ticket_call(self):
@@ -828,13 +783,5 @@ class Tickets(commands.Cog):
         #print ((reset_time-now).seconds)
         await asyncio.sleep((run_time - now).seconds)
        
-    #@commands.command(name='tickets')
-    async def test(self, ctx):
-        channel_number  = int(888611287112749106)
-        channel = self.bot.get_channel(channel_number)
-        await self.check_tickets(channel=channel)
-
-
-
 
 
