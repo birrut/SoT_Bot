@@ -58,7 +58,6 @@ class Tickets(commands.Cog):
         #this checks for a partial match
         if not out_list:
             for key in dic_list:
-                #print (dic_list[key][0])
                 try:
                     if name.casefold() in dic_list[key][0].casefold():
                         #print (key, dic_list[key])
@@ -653,19 +652,14 @@ class Tickets(commands.Cog):
         print ('Checking Tickets...')
         out_str = ''
         URL = 'https://swgoh.shittybots.me/api/guild/'
-        ALLY_CODE =  '482764294'
-        headers = {'shittybot': config.S_AUTH}
-        last_update = []
+        headers = {'shittybot': config.S_AUTH} last_update = []
         try:
             channel = ctx.channel
         except AttributeError:
             channel = channel
-        #    print ("ahh!!!!")
-       ############################## 
         
-        # pass dic {[guild_name], [ticket_list], [guild_id]
 
-        final_url = URL + ALLY_CODE
+        final_url = URL + config.ALLY_CODE
         try:
             response = requests.get(final_url, headers=headers, timeout=15)
         except Timeout:
