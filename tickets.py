@@ -603,12 +603,12 @@ class Tickets(commands.Cog):
 
         with open (in_file, 'r') as in_data:
             data = json.loads(in_data.read())
-        old_month = ''
-        counter = 0
 
         for day in data[-out_number:]:
             out_list.append(day['average'])
 
+        old_month = datetime.datetime.fromisoformat(data[-out_number]['date']).month
+        counter = 0
         maxavg = max(out_list)
         minavg = min(out_list)
         multiple = False
@@ -621,9 +621,6 @@ class Tickets(commands.Cog):
             #date_list.append(int(date.day))
             month = date.month
             day_number = date.day
-            if old_month == '':
-                old_month = month
-
             if old_month != month:
                 end_of_month = True
                 old_month = month
