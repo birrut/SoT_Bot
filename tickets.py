@@ -41,19 +41,6 @@ class Tickets(commands.Cog):
 
         #print (self.server_data_list)
 
-
-    def command_process(self, command, name_list):
-        """this is a helper function"""
-        #this might be messed up now
-        print ('this is in command_process. Are we using this anymore?')
-        for name in name_list:
-            print (name)
-            if name.casefold() in command.casefold():
-                if command.casefold() == name.casefold():
-                    return [command, 7]
-                elif command.rpartition(' ')[0].casefold() == name.casefold():
-                    return [command.rpartition(' ')[0], int(command.rpartition(' ')[2])] 
-
     def get_proper_name(self, name, dic_list):
         """takes a name from command and a one days list of dictionaries of form {id:[name, tickets]} and returns id."""
 
@@ -83,24 +70,6 @@ class Tickets(commands.Cog):
 
         if len(out_list) == 1:
             return out_list[0]
-
-            
-
-    def get_last_saved_time(self, server_number):
-        """helper function"""
-        print ("We are in last saved time. Does this ever happen?")
-        file_name = 'data/' + server_number + '.json'
-        last_time = None
-        with open(file_name, 'r') as in_file:
-            dict_list = json.loads(in_file.read())
-        last_time = dict_list[0]['date']
-        for day in dict_list:
-            if last_time < day['date']:
-                last_time = day['date']
-
-        return last_time
-
-
 
     def total_format(self, number):
         """Takes an int and formats it as a decimal string with letter to simulate exponents"""
@@ -290,8 +259,6 @@ class Tickets(commands.Cog):
         print (len(guild_info))
         with open(write_file, 'w') as out_file:
             out_file.write(json.dumps(guild_info))
-
-
 
 
 
@@ -676,33 +643,6 @@ class Tickets(commands.Cog):
         await ctx.send(out_str)
         #print (out_list)
 
-
-    def get_guild_members(self, response_json):
-        """This is a helper function that will take the response and return a dictionary of guild members"""
-        #print (response_json['LastUpdated'])
-        print ("this is in get_guild_member. Are we using this?")
-        try:
-            epoch_time = str(response_json['LastUpdated'])
-        except KeyError:
-            now = datetime.datetime.utcnow()
-            epoch_time = str(time.mktime(now.timetuple()))
-        e_time = int(epoch_time[:10])
-        last_update = e_time
-        return response_json['guild']['memberList'], last_update
-        #return response_json['guild']['memberList']
-
-
-    def get_tickets(self, members):
-        """Helper function that takes dictionary of members and returns dictionary name: tickets"""
-        print ("this is in get_tickets. Are we using this?")
-        out_dic = {}
-        for member in members:
-            for item in member['memberContributionList']:
-                if item['type'] == 2:
-                    out_dic[member['playerName']] = item['currentValue']
-            #out_dic[member['playerName']] = member['memberContributionList'][1]['currentValue']
-
-        return out_dic
 
     @commands.has_role("Officer")
     @commands.command(name="check_tickets")
