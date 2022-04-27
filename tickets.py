@@ -3,6 +3,7 @@ import requests
 from requests.exceptions import Timeout
 import os
 import datetime
+import calendar
 import time
 import re
 import sched
@@ -546,7 +547,7 @@ class Tickets(commands.Cog):
                 '600': '600'}
         ite = 0
         emb = discord.Embed(title=f"Ticket History for the last {days_to_process} days", color=discord.Color.green(),
-                descriptoin=f"For the last {days_to_process} days.")
+                description=f"For the last {days_to_process} days.")
         for dic in dict_list:
             #dic.sort(dic.items(), key=lambda item:item[1])
             dic = dict(sorted(dic.items(), key=lambda item:item[1]))
@@ -581,6 +582,7 @@ class Tickets(commands.Cog):
         Defaults to 7, but can take any number of days"""
         message_word_list = ctx.message.content.split()
         out_number = 7
+        str_list = []
         out_str = ''
         out_list = []
         date_list = []
@@ -594,25 +596,55 @@ class Tickets(commands.Cog):
                 out_number = int(message_word_list[1])
                 if out_number > len(data):
                     out_number = len(data)
-                out_str = "Trying to get the average for the last {} days.\n".format(out_number)
+                #out_str = "Trying to get the average for the last {} days.\n".format(out_number)
             except ValueError:
                 out_str = "Sorry, that isn't a number, defaulting to 7\n"
                 out_number = 7
 
         with open (in_file, 'r') as in_data:
             data = json.loads(in_data.read())
+        old_month = ''
+        counter = 0
 
         for day in data[-out_number:]:
             out_list.append(day['average'])
+
+        maxavg = max(out_list)
+        minavg = min(out_list)
+        multiple = False
+        end_of_month = False
+        for day in data[-out_number:]:
+            #out_list.append(day['average'])
             date_list.append(day['date'])
             date = datetime.datetime.fromisoformat(day['date'])
             #date_list.append(date)
             #date_list.append(int(date.day))
             month = date.month
             day_number = date.day
-            out_str += "{}-{}: {} \n".format(month, day_number, day['average'])
+            if old_month == '':
+                old_month = month
+
+            if old_month != month:
+                end_of_month = True
+                old_month = month
+                counter = 0
+
+            if counter % 5 == 0:
+                out_str +="\n"
+            counter +=1
+            if len(out_str) >= 1000 or end_of_month:
+                multiple = True
+                first_str = out_str
+                out_str = ''
+                str_list.append(first_str)
+
+            if day['average'] == maxavg or day['average'] ==minavg :
+                out_str += f"{month}-{day_number}: **{day['average']}** "
+            else:
+                out_str += f"{month}-{day_number}: {day['average']} "
+            end_of_month = False
         total = round(sum(out_list)/len(out_list))
-        out_str += ("The average of the averages is {}.".format(total))
+        out_str += ("\nThe average of the averages is {}.".format(total))
         fig, ax = plt.subplots()
         new_list = []
         for d in date_list:
@@ -638,9 +670,22 @@ class Tickets(commands.Cog):
             f=discord.File(image, filename="graph.png")
 
         await ctx.send(file=f)
-
-        await ctx.send(out_str)
-        #print (out_list)
+        
+        emb = discord.Embed(title=f"Ticket History Average for {out_number} days", colo=discord.Color.green())
+        if multiple:
+            str_list.append(out_str)
+            for out_str in str_list:
+                month = calendar.month_name[int(out_str.split('-')[0])]
+                emb.add_field(name=f"{month}:", value=out_str, inline=False)
+            await ctx.send(embed=emb)
+                #if out_str != str_list[-1]:
+                #    print ('here')
+                #    emb = discord.Embed(title=f"Ticket History Average for {out_number} days Continued", colo=discord.Color.green())
+            
+        else:
+            #month = calendar.month_name[int(out_str.split('-')[0])]
+            emb.add_field(name=f"Daily Average:", value=out_str, inline=False)
+            await ctx.send(embed=emb)
 
 
     @commands.has_role("Officer")
@@ -652,7 +697,8 @@ class Tickets(commands.Cog):
         print ('Checking Tickets...')
         out_str = ''
         URL = 'https://swgoh.shittybots.me/api/guild/'
-        headers = {'shittybot': config.S_AUTH} last_update = []
+        headers = {'shittybot': config.S_AUTH}
+        last_update = []
         try:
             channel = ctx.channel
         except AttributeError:
