@@ -546,8 +546,8 @@ class Tickets(commands.Cog):
                 'sub600': 'between 300-599',
                 '600': '600'}
         ite = 0
-        emb = discord.Embed(title=f"Ticket History for the last {days_to_process} days", color=discord.Color.green(),
-                description=f"For the last {days_to_process} days.")
+        emb = discord.Embed(title=f"Ticket History for the last {days_to_process} days", color=discord.Color.green())
+
         for dic in dict_list:
             #dic.sort(dic.items(), key=lambda item:item[1])
             dic = dict(sorted(dic.items(), key=lambda item:item[1]))
