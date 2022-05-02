@@ -590,6 +590,7 @@ class Tickets(commands.Cog):
             # date_list.append(int(date.day))
             month = date.month
             day_number = date.day
+            two_digit_day = date.strftime('%d')
             if old_month != month:
                 end_of_month = True
                 old_month = month
@@ -604,13 +605,18 @@ class Tickets(commands.Cog):
                 out_str = ''
                 str_list.append(first_str)
 
-            if day['average'] == maxavg or day['average'] ==minavg :
-                out_str += f"{month}-{day_number}: **{day['average']}** "
+            if day['average'] == maxavg:
+                # out_str += f"{month}-{two_digit_day}: **{day['average']}** "
+                out_str += f"{month}-{two_digit_day}:▲{day['average']} "
+
+            elif day['average'] == minavg:
+                out_str += f"{month}-{two_digit_day}:▼{day['average']} "
+
             else:
-                out_str += f"{month}-{day_number}: {day['average']} "
+                out_str += f"{month}-{two_digit_day}: {day['average']} "
             end_of_month = False
         total = round(sum(out_list)/len(out_list))
-        out_str += ("\nThe average of the averages is {}.".format(total))
+        # out_str += ("\nThe average of the averages is {}.".format(total))
         fig, ax = plt.subplots()
         new_list = []
         for d in date_list:
@@ -642,7 +648,10 @@ class Tickets(commands.Cog):
             str_list.append(out_str)
             for out_str in str_list:
                 month = calendar.month_name[int(out_str.split('-')[0])]
-                emb.add_field(name=f"{month}:", value=out_str, inline=False)
+                new_str = f"```{out_str}```"
+                emb.add_field(name=f"{month}:", value=new_str, inline=False)
+
+            emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
             await ctx.send(embed=emb)
                 # if out_str != str_list[-1]:
                 #    print('here')
