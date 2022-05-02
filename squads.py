@@ -1,27 +1,18 @@
 import json
-import requests
-from requests.exceptions import Timeout
-import os
-import datetime
-import time
-import re
+# import requests
 import discord
 from discord.ext import commands, tasks
-from asyncio import exceptions
-import plotly.express as px
-import matplotlib as mpl
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
-import numpy as np
-import helper
+# import plotly.express as px
+# import helper
 
 class Squad(commands.Cog):
+
     """This is in beta. It is for helping out with various squads."""
+
     def __init__(self, bot):
         self.bot = bot
         self.register_file = 'registered_users.json'
-        print ('Squad cog initialized')
-
+        print('Squad cog initialized')
 
     @commands.command(name="register")
     async def register_user(self, ctx, user_id):

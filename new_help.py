@@ -3,28 +3,13 @@ from discord.ext import commands
 from discord.errors import Forbidden
 import config
 
-"""This custom help command is a perfect replacement for the default one on any Discord Bot written in Discord.py!
-However, you must put "bot.remove_command('help')" in your bot, and the command must be in a cog for it to work.
-
-Original concept by Jared Newsom (AKA Jared M.F.)
-[Deleted] https://gist.github.com/StudioMFTechnologies/ad41bfd32b2379ccffe90b0e34128b8b
-Rewritten and optimized by github.com/nonchris
-https://gist.github.com/nonchris/1c7060a14a9d94e7929aa2ef14c41bc2
-
-You need to set three variables to make that cog run.
-Have a look at line 51 to 57
+"""
+You must put "bot.remove_command('help')" in your bot, 
+and the command must be in a cog for it to work.
 """
 
 
 async def send_embed(ctx, embed):
-    """
-    Function that handles the sending of embeds
-    -> Takes context and embed to send
-    - tries to send embed in channel
-    - tries to send normal message when that fails
-    - tries to send embed private with information abot missing permissions
-    If this all fails: https://youtu.be/dQw4w9WgXcQ
-    """
 
     image = discord.File('bot.png', filename='bot.png')
     embed.set_thumbnail(url='attachment://bot.png')
@@ -158,28 +143,14 @@ class Help(commands.Cog):
                 # check if cog is the matching one
                 if cog.lower() == input[0].lower():
                     for command in self.bot.cogs[cog].walk_commands():
-                        #print (f"Command: {str(command).lower()} len: {len(str(command))} type: {type(str(command).lower())}")
-                        #print (f"arg: {arg.lower()} len: {len(arg)} type: {type(arg.lower())}")
-                        #print (str(command).lower(), arg.lower())
                         if str(command).lower() == arg.lower():
                             emb = discord.Embed(title=f"{command}", description=command.help, color=discord.Color.blue())
                             found = True
                             break
-            
+
         if not found:
             emb = discord.Embed(title="I don't know.",
-                            description=f"I don't know about `{prefix}{arg}`. Try calling `{prefix}help` :sweat_smile:",
-                            color=discord.Color.orange())
+                                description=f"I don't know about `{prefix}{arg}`. Try calling `{prefix}help` :sweat_smile:",
+                                color=discord.Color.orange())
 
-       # else:
-       #     emb = discord.Embed(title="It's a magical place.",
-       #                         description="I don't know how you got here. But I didn't see this coming at all.\n"
-       #                                     "Would you please be so kind to report that issue to me on github?\n"
-       #                                     "https://github.com/nonchris/discord-fury/issues\n"
-       #                                     "Thank you! ~Chris",
-       #                         color=discord.Color.red())
-
-        # sending reply embed using our own function defined above
         await send_embed(ctx, emb)
-
-

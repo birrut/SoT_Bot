@@ -8,7 +8,7 @@ discord = "*"
 matplotlib = "*"
 requests = "*"
 plotly = "*"
-kaleido = "*"
+flake8 = "*"
 
 [dev-packages]
 

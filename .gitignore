@@ -3,3 +3,4 @@
 *.jpeg
 config.py
 nohup.out
+setup.cfg

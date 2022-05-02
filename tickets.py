@@ -1,19 +1,13 @@
 import json
 import requests
 from requests.exceptions import Timeout
-import os
 import datetime
 import calendar
-import time
-import re
-import sched
 import asyncio
 import discord
 from discord.ext import commands, tasks
 from asyncio import exceptions
-import plotly.express as px
 import matplotlib as mpl
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import helper
@@ -25,7 +19,7 @@ class Tickets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.schedule_ticket_call.start()
-        #At some point, this should be in a config file
+        # At some point, this should be in a config file
         self.server_list = ['884464695476625428', '888611226593136690']
         self.server_data_list = []
         for server in self.server_list:
@@ -38,56 +32,53 @@ class Tickets(commands.Cog):
 
             self.server_data_list.append(self.server_data)
 
-        print ('Tickets cog initialized')
-
-        #print (self.server_data_list)
+        print('Tickets cog initialized')
 
     def get_proper_name(self, name, dic_list):
-        """takes a name from command and a one days list of dictionaries of form {id:[name, tickets]} and returns id."""
+        """Gets proper name from command
+        takes a name from command and a one days list of dictionaries of form
+        {id:[name, tickets]} and returns id."""
 
         out_list = []
-        #This checks for an exact (minus case) match
+        # This checks for an exact (minus case) match
         for key in dic_list:
-            #print (dic_list[key])
+            # print(dic_list[key])
             try:
-                if dic_list[key][0].casefold()==name.casefold():
+                if dic_list[key][0].casefold() == name.casefold():
                     out_list.append((key, dic_list[key][0]))
                     return [key, dic_list[key][0]]
             except TypeError:
                 pass
-                #print ("Do we ever get here?")
-        #this checks for a partial match
+                # print("Do we ever get here?")
+        # this checks for a partial match
         if not out_list:
             for key in dic_list:
                 try:
                     if name.casefold() in dic_list[key][0].casefold():
-                        #print (key, dic_list[key])
-                        #print (dic_list[key][1])
+                        # print(key, dic_list[key])
+                        # print(dic_list[key][1])
                         out_list.append((key, dic_list[key][0]))
-                except TypeError as e:
-                    #print ('error')
+                except TypeError:
                     pass
 
         if len(out_list) == 1:
             return out_list[0]
 
     def total_format(self, number):
-        """Takes an int and formats it as a decimal string with letter to simulate exponents"""
+        """Takes an int and returns a decimal string with letter to simulate exponents"""
         f_list = ['', 'k', 'm']
         mag = 0
         while number > 1000:
-            mag +=1
+            mag += 1
             number = number / 1000
         return "{}{}".format(round(number), f_list[mag])
-
-                
 
     def save_gp_info(self, guild_json, file_name):
         """this is called automatically and saves the guild gp data."""
         write_list = []
-        print ('this is how long the input was.')
-        print (len(guild_json))
-        print (file_name)
+        print('this is how long the input was.')
+        print(len(guild_json))
+        print(file_name)
 
         now = datetime.datetime.utcnow()
         guild_json = guild_json['guild']
@@ -101,43 +92,39 @@ class Tickets(commands.Cog):
         except FileNotFoundError:
             old_data = [guild_json]
 
-
         for day in old_data:
             last_update = datetime.datetime.fromisoformat(day['date'])
-            #Should check guild update time here
+            # Should check guild update time here
             if last_update.date() == this_update_time.date():
                 index = old_data.index(day)
                 old_data.pop(index)
-                print ("Remvoing ", str(last_update.date()))
+                print("Remvoing ", str(last_update.date()))
         if len(old_data):
             write_list = old_data
         write_list.append(guild_json)
 
-            
         with open(file_name, 'w') as write_file:
             write_file.write(json.dumps(write_list))
 
-
-
     def delete_day(self, f, date):
         """Function that actually deletes the day from the json file."""
-        print ('we are thinking about deleting a day')
+        print('we are thinking about deleting a day')
         out_dictionary_list = []
         out_str = ''
-        #print (date)
+        # print(date)
         with open(f, 'r') as input_file:
             d_list = json.loads(input_file.read())
-            print ("Original Length: ", len(d_list))
+            print("Original Length: ", len(d_list))
             orig_len = len(d_list)
             for d in d_list:
                 if date == datetime.datetime.fromisoformat(d['date']).date():
-                    print ("Removing: ", datetime.datetime.fromisoformat(d['date']).date())
+                    print("Removing: ", datetime.datetime.fromisoformat(d['date']).date())
                 else:
                     out_dictionary_list.append(d)
         end_len = len(out_dictionary_list)
-        with open (f, 'w') as out_file:
-            #print (out_dictionary_list)
-            print (len(out_dictionary_list))
+        with open(f, 'w') as out_file:
+            # print(out_dictionary_list)
+            print(len(out_dictionary_list))
             out_file.write(json.dumps(out_dictionary_list))
         if end_len < orig_len:
             out_str = "Number of days stored changed from {} to {}.".format(orig_len, end_len)
@@ -145,10 +132,8 @@ class Tickets(commands.Cog):
             out_str = "No days to remove"
         return out_str
 
-
-
     def day_exists(self, f, date):
-        with open (f, 'r') as in_file:
+        with open(f, 'r') as in_file:
             day_list = json.loads(in_file.read())
 
         for day in day_list:
@@ -157,24 +142,22 @@ class Tickets(commands.Cog):
                 return True
         return False
 
-
-
     def check(self, reaction, user):
         """helper function for checking for reaction"""
-        print ("We don't use this, right?")
+        print("We don't use this, right?")
         if user != self.bot.user:
             return True
 
-    #Need to make this command work on guild_json as well as json
-    #@commands.has_role("Officer")
-    #@commands.command("remove_day")
+    # Need to make this command work on guild_json as well as json
+    # @commands.has_role("Officer")
+    # @commands.command("remove_day")
     async def remove_day(self, ctx):
         """Removes Specified day from ticket list.
         This can only be called by an officer. Supply date of day you want removed in the format YYYY-MM-DD"""
         file_name = 'data/' + str(ctx.message.guild.id) + ".json"
         message_word_list = ctx.message.content.split()
         input_date = message_word_list[1:]
-        #get input date
+        # get input date
         date = datetime.datetime.fromisoformat(input_date[0]).date()
         if self.day_exists(file_name, date):
             mess = await ctx.send("Would you like to remove this day? Please respond!")
@@ -190,114 +173,109 @@ class Tickets(commands.Cog):
             out_str = "No Day Removed"
             await ctx.send(out_str)
             return
-            print ("They didn't say anything")
-        print ('do we ever get here?')
-        #print (command)
+            print("They didn't say anything")
+        print('do we ever get here?')
+        # print(command)
         if reaction.emoji == '✅':
             out_str = self.delete_day(file_name, date)
         else:
             out_str = "No Day Removed"
         await ctx.send(out_str)
-        
-
 
     @commands.command("rerun")
     async def rerun(self, ctx, message_id):
-        """This is for if the daily ticket call didn't work, but Bobba's bot got called. pass id of Bobba's message. This might not work if there is a new person since last ticket check"""
+        """This is for if the daily ticket call didn't work, but Bobba's bot got called.
+        Pass id of Bobba's message. This might not work if there is a new person since last ticket check"""
         new_dic = {}
 
-        #get message
+        # get message
         old_message = await ctx.fetch_message(message_id)
         time = old_message.created_at - datetime.timedelta(hours=8)
 
-        #read from guild_data
-        in_file = 'data/' +  str(ctx.message.guild.id) + "guild_data.json"
-        write_file = 'data/' +  str(ctx.message.guild.id) + ".json"
+        # read from guild_data
+        # in_file = 'data/' +  str(ctx.message.guild.id) + "guild_data.json"
+        write_file = 'data/' + str(ctx.message.guild.id) + ".json"
         with open(write_file, 'r') as guild_data:
             guild_info = json.loads(guild_data.read())
         guild_list = guild_info[-1]
-        print (guild_list)
+        print(guild_list)
         new_dic['date'] = str(time)
         new_dic['guild name'] = guild_list['guild name']
-        #add date
-
 
         for x in old_message.embeds:
-            ticket_string  = x.description
-        
+            ticket_string = x.description
+
         ticket_list = ticket_string.split(':')
         out_list = []
         for x in ticket_list:
             try:
                 item_list = x.split("`")
                 for item in item_list:
-                    if item !="":
+                    if item != "":
                         out_list.append(item.strip())
             except AttributeError:
                 out_list.append(x.strip())
         ticket_list = list(reversed(out_list))
         number_list = [int(x) for x in ticket_list[1::2]]
-        print (number_list)
+        print(number_list)
 
         for name in ticket_list[::2]:
-            for l in guild_list:
+            for member in guild_list:
                 try:
-                    if name in guild_list[l]:
-                        new_dic[l] = [name, int(ticket_list[ticket_list.index(name)+1])]
+                    if name in guild_list[member]:
+                        new_dic[member] = [name, int(ticket_list[ticket_list.index(name)+1])]
                 except TypeError:
                     pass
         new_dic['total'] = sum(number_list)
         new_dic['average'] = round(sum(number_list)/len(number_list))
-        print (new_dic)
+        print(new_dic)
 
-        #create message
-        await ctx.send (f"Total tickets was {new_dic['total']} and the average was {new_dic['average']}")
+        # create message
+        await ctx.send(f"Total tickets was {new_dic['total']} and the average was {new_dic['average']}")
 
-        #write data
-        print (len(guild_info))
+        # write data
+        print(len(guild_info))
         guild_info.append(new_dic)
-        print (len(guild_info))
+        print(len(guild_info))
         with open(write_file, 'w') as out_file:
             out_file.write(json.dumps(guild_info))
 
-
-
-
     # This doesn't have gp, and we would need to get ID's from json and match with names from Bobba's Bot
-    #@bot.listen('on_message')
-    #@commands.Cog.listener("on_message")
+    # @bot.listen('on_message')
+    # @commands.Cog.listener("on_message")
     async def on_message(self, message):
         """Currently on using this to respond to the message from Bobba's bot, is there a better way to do this?"""
         if message.author == self.bot.user:
             return
 
-
-        if message.author.id ==718470614926491729:
-            #guild_id =  message.guild.id
-            #for x in message.embeds:
+        if message.author.id == 718470614926491729:
+            # guild_id =  message.guild.id
+            # for x in message.embeds:
             #    average_daily = get_daily_average(x.description, guild_id)
             for x in message.embeds:
                 guild_name_tuple = x.title.partition('for ')[-1:]
                 for name in guild_name_tuple:
                     guild_name = name
-                ticket_string  = x.description
-            #out_file = str(message.guild.id) +  ".json"
+                ticket_string = x.description
+            # out_file = str(message.guild.id) +  ".json"
             ticket_list = ticket_string.split(':')
             message_dict = {}
             message_dict['guild_name'] = guild_name
             message_dict['guild_id'] = message.guild.id
             message_dict['ticket_list'] = ticket_list
-            #print (ticket_list)
+            # print(ticket_list)
             daily_list = self.get_daily_average(message_dict)
-            print (daily_list)
+            print(daily_list)
             average_daily = daily_list[0]
             daily_total = daily_list[1]
             record_average = daily_list[2]
             record_total = daily_list[3]
             max_average = daily_list[4]
             max_total = daily_list[5]
-                
-            await message.channel.send("The average daily tickets for today was {}, and the total was {}. The record average is {} and the record total is {}".format(average_daily, daily_total, max_average, max_total))
+
+            out_str = f"The average daily tickets for today was {average_daily}, and the total was {daily_total}. The record average is {max_average} and the record total is {max_total}"
+            await message.channel.send(out_str)
+
             if record_average:
                 await message.channel.send("New record average!!!!")
             if record_total:
@@ -305,18 +283,17 @@ class Tickets(commands.Cog):
 
             return
 
-
     async def get_daily_average(self, channel, date):
         """Gets the daily average."""
 
-        #This is UTC time
-        guild_reset_time = datetime.time(hour = 1, minute = 30)
-        #reset_time = datetime.datetime.combine(datetime.date.today(), guild_reset_time)
+        # This is UTC time
+        guild_reset_time = datetime.time(hour=1, minute=30)
+        # reset_time = datetime.datetime.combine(datetime.date.today(), guild_reset_time)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
 
         read_file = 'data/' + str(channel.guild.id) + "guild_data.json"
         write_file = 'data/' + str(channel.guild.id) + ".json"
-        
+
         member_list = []
         out_dict = {}
         out_str = ''
@@ -326,7 +303,7 @@ class Tickets(commands.Cog):
             day_list = json.loads(data.read())
         for day in day_list:
             file_date = datetime.datetime.fromisoformat(day['utc time'])
-            #print ('here', file_date.date(), date.date())
+            # print('here', file_date.date(), date.date())
             if file_date.date() == date.date():
                 guild_name = day['profile']['name']
                 members = day['memberList']
@@ -343,24 +320,24 @@ class Tickets(commands.Cog):
         for member in member_list:
             out_str += f"`{member.tickets}`: {member.name}\n"
             out_dict[member.id] = [member.name, member.tickets]
-            #out_dict[member.name] = member.tickets
+            # out_dict[member.name] = member.tickets
 
         total = sum(member.tickets for member in member_list)
         avg = round(total/len(member_list))
         out_dict['total'] = total
         out_dict['average'] = avg
-        with open (write_file, 'r') as inp:
+        with open(write_file, 'r') as inp:
             old_data = json.loads(inp.read())
-        print (len(old_data))
+        print(len(old_data))
         max_tickets = 0
         avg_tickets = 0
 
         for day in old_data:
             last_update = datetime.datetime.fromisoformat(day['date'])
-            #Need to check guild reset time as well
-            #print (f"{date} - {self.reset_time}")
+            # Need to check guild reset time as well
+            # print(f"{date} - {self.reset_time}")
             if last_update.date() == date.date() and date < reset_time:
-                print ("removing older data: ", date.date())
+                print("removing older data: ", date.date())
                 index = old_data.index(day)
                 old_data.pop(index)
             if day['total'] > max_tickets:
@@ -368,23 +345,20 @@ class Tickets(commands.Cog):
             if day['average'] > avg_tickets:
                 avg_tickets = day['average']
 
-    
-
         writing = False
         old_data.append(out_dict)
-        print (len(old_data))
-        print (date)
-        print (reset_time)
+        print(len(old_data))
+        print(date)
+        print(reset_time)
         if date < reset_time:
             writing = True
-            with open (write_file, 'w') as out:
+            with open(write_file, 'w') as out:
                 out.write(json.dumps(old_data))
-
 
         out_str += f"The average for today was: {avg}, the max average is {avg_tickets}\n"
         out_str += f"The total for today was: {total}, and the max total is {max_tickets}\n"
 
-        emb = discord.Embed(title=f'Daily Tickets for {guild_name}', description = out_str, color=discord.Color.blue())
+        emb = discord.Embed(title=f'Daily Tickets for {guild_name}', description=out_str, color=discord.Color.blue())
         emb.set_thumbnail(url='attachment://bot.png')
         image = discord.File('bot.png', filename='bot.png')
         await channel.send(file=image, embed=emb)
@@ -395,14 +369,13 @@ class Tickets(commands.Cog):
 
         if avg > avg_tickets:
             await channel.send("New average record!")
-        #await channel.send(out_str)
+        # await channel.send(out_str)
 
     @commands.command(name="history")
     async def history(self, ctx, *args):
         """History for the specified user. Can take any days or gives 7 by default"""
         in_file = 'data/' + str(ctx.message.guild.id) + ".json"
         not_name_list = ['utc time', 'date', 'guild name', 'average', 'total']
-        name_list = []
         command_list = []
         days = None
         out_str = ''
@@ -415,22 +388,19 @@ class Tickets(commands.Cog):
         if not days:
             days = 7
 
-
         if len(args) == 0:
             await ctx.send("Please specify a user")
             return
 
         with open(in_file, 'r') as in_data:
-                json_list = json.loads(in_data.read())
+            json_list = json.loads(in_data.read())
         test_members = json_list[-1]
 
         in_str = ' '.join(command_list)
         try:
             player_id, name = self.get_proper_name(in_str, test_members)
-        except TypeError as e:
+        except TypeError:
             player_id = None
-
-
 
         if not player_id:
             out_str += f"No member named {in_str}. Try one of these:\n"
@@ -458,7 +428,7 @@ class Tickets(commands.Cog):
             for day in json_list[-user_days:]:
                 date = datetime.datetime.fromisoformat(day['date'])
                 for member in day:
-                    #member = Member(pot_member)
+                    # member = Member(pot_member)
                     if member == user_list[0]:
                         history_list.append(day[member][1])
                         date_list.append(date)
@@ -477,9 +447,8 @@ class Tickets(commands.Cog):
             out = build_str(user)
             await ctx.send(out)
 
-
-
     @commands.command(name="average")
+    # @commands.hybrid_command()
     async def average(self, ctx):
         """Sorts members by tickets averaged over the given number of days.
         Defaults to 7"""
@@ -489,7 +458,7 @@ class Tickets(commands.Cog):
         not_name_list = ['utc time', 'date', 'guild name', 'average', 'total']
         if len(message_word_list) == 2:
             try:
-                days_to_process = int(message_word_list[1]) 
+                days_to_process = int(message_word_list[1])
             except ValueError:
                 out_str = "Sorry, that isn't a number, defaulting to 7\n"
                 days_to_process = 7
@@ -504,7 +473,7 @@ class Tickets(commands.Cog):
         dict600 = {}
         day_number = 0
 
-        with open (in_file, 'r') as in_data:
+        with open(in_file, 'r') as in_data:
             dictionary_list = json.loads(in_data.read())
         day_number = len(dictionary_list)
         for day in dictionary_list[-1:]:
@@ -512,7 +481,7 @@ class Tickets(commands.Cog):
                 try:
                     if key not in not_name_list:
                         id_list.append(key)
-                        name_dict[key]=day[key][0]
+                        name_dict[key] = day[key][0]
                 except TypeError:
                     pass
 
@@ -520,7 +489,7 @@ class Tickets(commands.Cog):
             number_list = []
             for day in dictionary_list[-days_to_process:]:
                 try:
-                    #print (day[player_id])
+                    # print(day[player_id])
                     number_list.append(day[player_id][1])
                 except KeyError:
                     pass
@@ -535,7 +504,7 @@ class Tickets(commands.Cog):
             else:
                 dict600[player_id] = avg_dict[player_id]
         if day_number < days_to_process:
-            #out_str += "I don't have data for {} days, I only have {} days. \n".format(days_to_process, day_number)
+            # out_str += "I don't have data for {} days, I only have {} days. \n".format(days_to_process, day_number)
             days_to_process = day_number
 
         dict_list = [dict0, dictsub300, dictsub600, dict600]
@@ -549,17 +518,17 @@ class Tickets(commands.Cog):
         emb = discord.Embed(title=f"Ticket History for the last {days_to_process} days", color=discord.Color.green())
 
         for dic in dict_list:
-            #dic.sort(dic.items(), key=lambda item:item[1])
+            # dic.sort(dic.items(), key=lambda item:item[1])
             dic = dict(sorted(dic.items(), key=lambda item:item[1]))
-            #out_str += f"\n**Members who averaged {str_list[ite]}:**\n"
+            # out_str += f"\n**Members who averaged {str_list[ite]}:**\n"
             for player_id in dic:
                 out_str += f"{name_dict[player_id]}: {str(dic[player_id][0])}\n"
                 if dic[player_id][1] < days_to_process:
-                    #This removes the new line character
-                    #print (out_str[-2:])
+                    # This removes the new line character
+                    # print(out_str[-2:])
                     out_str = out_str[:-1]
                     out_str += f" (I only have {dic[player_id][1]} days) \n"
-                #else:
+                # else:
                 #    out_str +='\n'
             if out_str == '':
                 out_str = "Nobody averaged {}".format(str_list[ite])
@@ -569,8 +538,8 @@ class Tickets(commands.Cog):
 
 
 
-        #return out_str
-        #await ctx.send(out_str)
+        # return out_str
+        # await ctx.send(out_str)
         emb.set_thumbnail(url='attachment://bot.png')
         image = discord.File('bot.png', filename='bot.png')
         await ctx.send(file=image, embed=emb)
@@ -596,7 +565,7 @@ class Tickets(commands.Cog):
                 out_number = int(message_word_list[1])
                 if out_number > len(data):
                     out_number = len(data)
-                #out_str = "Trying to get the average for the last {} days.\n".format(out_number)
+                # out_str = "Trying to get the average for the last {} days.\n".format(out_number)
             except ValueError:
                 out_str = "Sorry, that isn't a number, defaulting to 7\n"
                 out_number = 7
@@ -614,11 +583,11 @@ class Tickets(commands.Cog):
         multiple = False
         end_of_month = False
         for day in data[-out_number:]:
-            #out_list.append(day['average'])
+            # out_list.append(day['average'])
             date_list.append(day['date'])
             date = datetime.datetime.fromisoformat(day['date'])
-            #date_list.append(date)
-            #date_list.append(int(date.day))
+            # date_list.append(date)
+            # date_list.append(int(date.day))
             month = date.month
             day_number = date.day
             if old_month != month:
@@ -646,15 +615,15 @@ class Tickets(commands.Cog):
         new_list = []
         for d in date_list:
             new_list.append(np.datetime64(d))
-        #graph_dates = np.arange(new_list)
+        # graph_dates = np.arange(new_list)
         f_date = mpl.dates.DateFormatter('%m-%d')
         ax.scatter(new_list, out_list)
         ax.xaxis.set_major_formatter(f_date)
         ax.set_ylim([200, 600])
         new_date_list = [x for x in range(len(new_list))]
 
-        #x = np.array(new_date_list)
-        #y = np.array(out_list)
+        # x = np.array(new_date_list)
+        # y = np.array(out_list)
         x = new_date_list
         y = out_list
         linear_model = np.polyfit(x,y,2)
@@ -675,12 +644,12 @@ class Tickets(commands.Cog):
                 month = calendar.month_name[int(out_str.split('-')[0])]
                 emb.add_field(name=f"{month}:", value=out_str, inline=False)
             await ctx.send(embed=emb)
-                #if out_str != str_list[-1]:
-                #    print ('here')
+                # if out_str != str_list[-1]:
+                #    print('here')
                 #    emb = discord.Embed(title=f"Ticket History Average for {out_number} days Continued", colo=discord.Color.green())
             
         else:
-            #month = calendar.month_name[int(out_str.split('-')[0])]
+            # month = calendar.month_name[int(out_str.split('-')[0])]
             emb.add_field(name=f"Daily Average:", value=out_str, inline=False)
             await ctx.send(embed=emb)
 
@@ -691,7 +660,7 @@ class Tickets(commands.Cog):
         """This is called automatically. It gets the ticket data, saves it in two places, and prints. 
         This can also be called manually by an officer if there was an error."""
 
-        print ('Checking Tickets...')
+        print('Checking Tickets...')
         out_str = ''
         URL = 'https://swgoh.shittybots.me/api/guild/'
         headers = {'shittybot': config.S_AUTH}
@@ -708,12 +677,12 @@ class Tickets(commands.Cog):
         except Timeout:
             try:
                 await channel.send("It seems like the api is having timeout issues, please try again later")
-                print (response.status_code)
+                print(response.status_code)
             except AttributeError:
                 await channel.send("It seems like the api is having issues, please try again later")
-                print (response.status_code)
+                print(response.status_code)
             return
-        print (response.status_code)
+        print(response.status_code)
         
         if response.status_code == 429:
             await channel.send("Too many requests to API, please try again later")
@@ -731,33 +700,33 @@ class Tickets(commands.Cog):
 
     @tasks.loop(hours=24)
     async def schedule_ticket_call(self):
-        print ("Making ticket_call")
-        print (datetime.datetime.now())
+        print("Making ticket_call")
+        print(datetime.datetime.now())
 
         for server in self.server_data_list:
             channel_number = int(server['channel'])
             channel = self.bot.get_channel(channel_number)
             self.channel = channel
             try:
-                #await channel.send('we should run the check tickets command now!')
+                # await channel.send('we should run the check tickets command now!')
                 await self.check_tickets(channel=channel)
             except AttributeError as e:
-                print ('maybe wrong guild? This is in the if statement')
+                print('maybe wrong guild? This is in the if statement')
                 raise e
 
     @schedule_ticket_call.before_loop
     async def before_ticket_loop(self):
-        print ('waiting...')
+        print('waiting...')
         await self.bot.wait_until_ready()
         guild_reset_time = datetime.time(hour = 1, minute = 30)
-        #guild_reset_time = datetime.time(hour = 22, minute = 31)
+        # guild_reset_time = datetime.time(hour = 22, minute = 31)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
-        #self.reset_time = reset_time
+        # self.reset_time = reset_time
         run_time = reset_time - datetime.timedelta(seconds=30)
         now = datetime.datetime.utcnow()
-        print (run_time)
-        print (f"Waiting for {(run_time - now).seconds} seconds.")
-        #print ((reset_time-now).seconds)
+        print(run_time)
+        print(f"Waiting for {(run_time - now).seconds} seconds.")
+        # print((reset_time-now).seconds)
         await asyncio.sleep((run_time - now).seconds)
        
 
