@@ -596,24 +596,24 @@ class Tickets(commands.Cog):
                 old_month = month
                 counter = 0
 
-            if counter % 5 == 0:
+            if counter % 7 == 0:
                 out_str +="\n"
             counter +=1
             if len(out_str) >= 1000 or end_of_month:
                 multiple = True
                 first_str = out_str
                 out_str = ''
-                str_list.append(first_str)
+                str_list.append((first_str, month-1))
 
             if day['average'] == maxavg:
                 # out_str += f"{month}-{two_digit_day}: **{day['average']}** "
-                out_str += f"{month}-{two_digit_day}:▲{day['average']} "
+                out_str += f"{two_digit_day}:▲{day['average']} "
 
             elif day['average'] == minavg:
-                out_str += f"{month}-{two_digit_day}:▼{day['average']} "
+                out_str += f"{two_digit_day}:▼{day['average']} "
 
             else:
-                out_str += f"{month}-{two_digit_day}: {day['average']} "
+                out_str += f"{two_digit_day}: {day['average']} "
             end_of_month = False
         total = round(sum(out_list)/len(out_list))
         # out_str += ("\nThe average of the averages is {}.".format(total))
@@ -645,10 +645,11 @@ class Tickets(commands.Cog):
         
         emb = discord.Embed(title=f"Ticket History Average for {out_number} days", colo=discord.Color.green())
         if multiple:
-            str_list.append(out_str)
+            str_list.append((out_str, month))
             for out_str in str_list:
-                month = calendar.month_name[int(out_str.split('-')[0])]
-                new_str = f"```{out_str}```"
+                # print(out_str)
+                month = calendar.month_name[out_str[1]]
+                new_str = f"```{out_str[0]}```"
                 emb.add_field(name=f"{month}:", value=new_str, inline=False)
 
             emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
