@@ -509,18 +509,12 @@ class Tickets(commands.Cog):
 
         dict_list = [dict0, dictsub300, dictsub600, dict600]
         str_list = ['0', 'between 0-299', 'between 300-599', '600']
-        str_dict = {
-                '0': "0",
-                'sub300': 'between 0-299',
-                'sub600': 'between 300-599',
-                '600': '600'}
         ite = 0
         emb = discord.Embed(title=f"Ticket History for the last {days_to_process} days", color=discord.Color.green())
 
         for dic in dict_list:
-            # dic.sort(dic.items(), key=lambda item:item[1])
-            dic = dict(sorted(dic.items(), key=lambda item:item[1]))
-            # out_str += f"\n**Members who averaged {str_list[ite]}:**\n"
+            # Sorts each dictionary by player's average tickets
+            dic = dict(sorted(dic.items(), key=lambda item: item[1]))
             for player_id in dic:
                 out_str += f"{name_dict[player_id]}: {str(dic[player_id][0])}\n"
                 if dic[player_id][1] < days_to_process:
@@ -532,11 +526,9 @@ class Tickets(commands.Cog):
                 #    out_str +='\n'
             if out_str == '':
                 out_str = "Nobody averaged {}".format(str_list[ite])
-            emb.add_field(name =f"\n**Members who averaged {str_list[ite]}:**\n", value=out_str, inline=False)
+            emb.add_field(name=f"\n**Members who averaged {str_list[ite]}:**\n", value=out_str, inline=False)
             out_str = ''
-            ite +=1
-
-
+            ite += 1
 
         # return out_str
         # await ctx.send(out_str)
@@ -544,10 +536,9 @@ class Tickets(commands.Cog):
         image = discord.File('bot.png', filename='bot.png')
         await ctx.send(file=image, embed=emb)
 
-
     @commands.command(name="average_history")
     async def average_list(self, ctx):
-        """returns the total average with a graph. 
+        """returns the total average with a graph.
         Defaults to 7, but can take any number of days"""
         message_word_list = ctx.message.content.split()
         out_number = 7
@@ -555,9 +546,9 @@ class Tickets(commands.Cog):
         out_str = ''
         out_list = []
         date_list = []
-        in_file = 'data/' +  str(ctx.message.guild.id) + ".json"
+        in_file = 'data/' + str(ctx.message.guild.id) + ".json"
 
-        with open (in_file, 'r') as in_data:
+        with open(in_file, 'r') as in_data:
             data = json.loads(in_data.read())
 
         if len(message_word_list) > 1:
@@ -570,7 +561,7 @@ class Tickets(commands.Cog):
                 out_str = "Sorry, that isn't a number, defaulting to 7\n"
                 out_number = 7
 
-        with open (in_file, 'r') as in_data:
+        with open(in_file, 'r') as in_data:
             data = json.loads(in_data.read())
 
         for day in data[-out_number:]:
@@ -589,21 +580,21 @@ class Tickets(commands.Cog):
             # date_list.append(date)
             # date_list.append(int(date.day))
             month = date.month
-            day_number = date.day
             two_digit_day = date.strftime('%d')
             if old_month != month:
                 end_of_month = True
+                display_month = old_month
                 old_month = month
                 counter = 0
 
             if counter % 7 == 0:
-                out_str +="\n"
-            counter +=1
+                out_str += "\n"
+            counter += 1
             if len(out_str) >= 1000 or end_of_month:
                 multiple = True
                 first_str = out_str
                 out_str = ''
-                str_list.append((first_str, month-1))
+                str_list.append((first_str, display_month))
 
             if day['average'] == maxavg:
                 # out_str += f"{month}-{two_digit_day}: **{day['average']}** "
@@ -632,18 +623,18 @@ class Tickets(commands.Cog):
         # y = np.array(out_list)
         x = new_date_list
         y = out_list
-        linear_model = np.polyfit(x,y,2)
+        linear_model = np.polyfit(x, y, 2)
         linear_model_fn = np.poly1d(linear_model)
-        x_s = np.arange(0,out_number)
+        x_s = np.arange(0, out_number)
         plt.plot(new_list, linear_model_fn(x_s))
-        
         fig.savefig('plot.png')
+
         with open('plot.png', 'rb') as image:
-            f=discord.File(image, filename="graph.png")
+            f = discord.File(image, filename="graph.png")
 
         await ctx.send(file=f)
-        
         emb = discord.Embed(title=f"Ticket History Average for {out_number} days", colo=discord.Color.green())
+
         if multiple:
             str_list.append((out_str, month))
             for out_str in str_list:
@@ -654,32 +645,24 @@ class Tickets(commands.Cog):
 
             emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
             await ctx.send(embed=emb)
-                # if out_str != str_list[-1]:
-                #    print('here')
-                #    emb = discord.Embed(title=f"Ticket History Average for {out_number} days Continued", colo=discord.Color.green())
-            
         else:
             # month = calendar.month_name[int(out_str.split('-')[0])]
-            emb.add_field(name=f"Daily Average:", value=out_str, inline=False)
+            emb.add_field(name="Daily Average:", value=out_str, inline=False)
             await ctx.send(embed=emb)
-
 
     @commands.has_role("Officer")
     @commands.command(name="check_tickets")
     async def check_tickets(self, ctx=None, channel=None):
-        """This is called automatically. It gets the ticket data, saves it in two places, and prints. 
+        """This is called automatically. It gets the ticket data, saves it in two places, and prints.
         This can also be called manually by an officer if there was an error."""
 
         print('Checking Tickets...')
-        out_str = ''
         URL = 'https://swgoh.shittybots.me/api/guild/'
         headers = {'shittybot': config.S_AUTH}
-        last_update = []
         try:
             channel = ctx.channel
         except AttributeError:
             channel = channel
-        
 
         final_url = URL + config.ALLY_CODE
         try:
@@ -693,20 +676,17 @@ class Tickets(commands.Cog):
                 print(response.status_code)
             return
         print(response.status_code)
-        
+
         if response.status_code == 429:
             await channel.send("Too many requests to API, please try again later")
             return
         elif response.status_code == 200:
-            ticket_list = []
             r_json = response.json()
             guild_file_name = 'data/' + str(channel.guild.id) + 'guild_data.json'
             self.save_gp_info(r_json, guild_file_name)
 
         date = datetime.datetime.utcnow()
         await self.get_daily_average(channel, date)
-
-
 
     @tasks.loop(hours=24)
     async def schedule_ticket_call(self):
@@ -728,7 +708,7 @@ class Tickets(commands.Cog):
     async def before_ticket_loop(self):
         print('waiting...')
         await self.bot.wait_until_ready()
-        guild_reset_time = datetime.time(hour = 1, minute = 30)
+        guild_reset_time = datetime.time(hour=1, minute=30)
         # guild_reset_time = datetime.time(hour = 22, minute = 31)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
         # self.reset_time = reset_time
@@ -738,6 +718,3 @@ class Tickets(commands.Cog):
         print(f"Waiting for {(run_time - now).seconds} seconds.")
         # print((reset_time-now).seconds)
         await asyncio.sleep((run_time - now).seconds)
-       
-
-
