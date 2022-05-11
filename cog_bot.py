@@ -1,6 +1,4 @@
-import discord
-from discord.ext import commands, tasks
-from asyncio import exceptions
+from discord.ext import commands
 import tickets
 import territory_battles
 import galactic_power
@@ -14,16 +12,16 @@ bot = commands.Bot(command_prefix='$')
 
 @bot.event
 async def on_ready():
-    print ("ready to go")
+    print("ready to go")
+
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("That is not a valid command. Try calling $help")
-        #called_command = error.error
-        args_list = str(error.args).split('"')
-        called_command = args_list[1]
-        #for command in bot.all_commands:
+        # args_list = str(error.args).split('"')
+        # called_command = args_list[1]
+        # for command in bot.all_commands:
         raise error
     elif isinstance(error, commands.errors.MissingRole):
         if "'Officer'" in str(error):
@@ -32,8 +30,6 @@ async def on_command_error(ctx, error):
             raise error
     else:
         raise error
-
-     
 
 bot.add_cog(tickets.Tickets(bot))
 bot.add_cog(territory_battles.TB(bot))
@@ -44,4 +40,3 @@ bot.add_cog(new_help.Help(bot))
 
 ##################################################
 bot.run(config.BOT_AUTH_CODE)
-

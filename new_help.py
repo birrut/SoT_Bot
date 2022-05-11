@@ -4,7 +4,7 @@ from discord.errors import Forbidden
 import config
 
 """
-You must put "bot.remove_command('help')" in your bot, 
+You must put "bot.remove_command('help')" in your bot,
 and the command must be in a cog for it to work.
 """
 
@@ -39,10 +39,8 @@ class Help(commands.Cog):
         prefix = "$"
         version = config.BOT_VERSION
         found = False
-	
-	# setting owner name - if you don't wanna be mentioned remove line 49-60 and adjust help text (line 88) 
-        owner = "Chirrut"	# ENTER YOU DISCORD-ID
-        owner_name = "Chirrut"	# ENTER YOUR USERNAME#1234
+        # setting owner name - if you don't wanna be mentioned remove line 49-60 and adjust help text (line 88)
+        owner = "Chirrut"       # ENTER YOU DISCORD-ID
         # checks if cog parameter was given
         # if not: sending all modules and commands not associated with a cog
         if not input:
@@ -50,7 +48,7 @@ class Help(commands.Cog):
             try:
                 owner = ctx.guild.get_member(owner).mention
 
-            except AttributeError as e:
+            except AttributeError:
                 owner = owner
 
             # starting to build embed
@@ -61,13 +59,12 @@ class Help(commands.Cog):
             # iterating trough cogs, gathering descriptions
             cogs_desc = ''
             for cog in self.bot.cogs:
-                #print (dir(self.bot.cogs[cog]))
+                # print (dir(self.bot.cogs[cog]))
                 commands = self.bot.cogs[cog].walk_commands()
                 cogs_desc += f'`{cog}` {self.bot.cogs[cog].__doc__}\n'
                 for command in commands:
-                    cogs_desc +=f"`{prefix}{command}` "
-                cogs_desc +='\n'
-                #print 
+                    cogs_desc += f"`{prefix}{command}` "
+                cogs_desc += '\n'
 
             # adding 'list' of cogs to embed
             emb.add_field(name='Modules', value=cogs_desc, inline=False)
@@ -80,7 +77,7 @@ class Help(commands.Cog):
                 # listing command if cog name is None and command isn't hidden
                 if not command.cog_name and not command.hidden:
                     commands_desc += f'{command.name} - {command.help}\n'
-                #elif not command.hidden:
+                # elif not command.hidden:
                 #    commands_desc += f'{command.name}\n'
 
             # adding those commands to embed
@@ -88,7 +85,7 @@ class Help(commands.Cog):
                 emb.add_field(name='Not belonging to a module', value=commands_desc, inline=False)
 
             # setting information about author
-            #emb.add_field(name="About", value=f"The Bots is developed by Chriѕ#0001, based on discord.py.\n\
+            # emb.add_field(name="About", value=f"The Bots is developed by Chriѕ#0001, based on discord.py.\n\
             #                        This version of it is maintained by {owner}\n\
             #                        Please visit https://github.com/nonchris/discord-fury to submit ideas or bugs.")
             emb.set_footer(text=f"Bot is running {version}")
@@ -111,13 +108,12 @@ class Help(commands.Cog):
                     except AttributeError:
                         pass
                     # getting commands from cog
-                    #for command in self.bot.get_cog(cog).get_commands():
-                        #print (dir(command))
+                    # for command in self.bot.get_cog(cog).get_commands():
+                        # print (dir(command))
                         # if cog is not hidden
-                        #if not command.hidden:
+                        # if not command.hidden:
                         #    emb.add_field(name=f"`{prefix}{command.name}`", value=command.help, inline=False)
                         #    c_list = get_subs(command)
-                        #     
                         #        emb.add_field(name=f"`{prefix}{command} {other.name}`", value=other.help, inline=False)
                     # found cog - breaking loop
                     break
@@ -132,8 +128,8 @@ class Help(commands.Cog):
                         break
                 else:
                     emb = discord.Embed(title="What's that?!",
-                                    description=f"I've never heard from a module called `{input[0]}` before :scream:",
-                                    color=discord.Color.orange())
+                                        description=f"I've never heard from a module called `{input[0]}` before :scream:",
+                                        color=discord.Color.orange())
                     found = True
 
         # too many cogs requested - only one at a time allowed
