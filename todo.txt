@@ -1,5 +1,4 @@
 
-
 need to handle different max and min with 6dot
 
 Need to think about command nesting
@@ -9,7 +8,7 @@ gp takes no arguments. What should I do if somebody supplies some?
 
 guild['chatChannel1Id']????
 
-Check log to see if we are using all the helper functions
+reformat user gp growth. Can any of the guild code be reused? need to handle data larger than max messages size
 
-
+create readme
 
