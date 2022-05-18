@@ -63,7 +63,11 @@ class Power(commands.Cog):
             mag += 1
             number = number / 1000
 
-        return "{}{}{}".format(sign, round(number), f_list[mag])
+        if mag == 2:
+            ret_number = round(number,1)
+        else:
+            ret_number = round(number)
+        return "{}{}{}".format(sign, ret_number, f_list[mag])
 
     @commands.group(invoke_without_command=True)
     async def power(self, ctx, days=7):
@@ -349,6 +353,7 @@ class Power(commands.Cog):
             date_list = []
             gp_list = []
             out_str = ''
+            out_list = []
             for day in guild_data[-days:]:
                 date = datetime.datetime.fromisoformat(day['date'])
                 members = day['memberList']
@@ -365,15 +370,21 @@ class Power(commands.Cog):
             for ite in range(len(gp_list)):
                 month = date_list[ite].month
                 day = date_list[ite].day
-                out_str += f"{month}-{day}. {format(gp_list[ite], ',d')} Growth: {format(growth_list[ite], ',d')}\n"
+                out_str += f"{month}-{day}: {format(gp_list[ite], ',d')} Growth: {format(growth_list[ite], ',d')}\n"
+
+                if len(out_str) > 1800:
+                    out_list.append(out_str)
+                    out_str = ''
 
             out_str += f"Total growth over the last {len(growth_list)} days: {format(sum(growth_list), ',d')}."
+            out_list.append(out_str)
 
-            return out_str
+            return out_list
 
         for user in user_list:
             out = make_list(user.id)
-            await ctx.send(out)
+            for message in out:
+                await ctx.send(message)
 
     # @user.command()
     async def graph(self, ctx, *args):
