@@ -14,7 +14,7 @@ class Squad(commands.Cog):
         self.register_file = 'registered_users.json'
         print('Squad cog initialized')
 
-    @commands.command(name="register")
+    #@commands.command(name="register")
     async def register_user(self, ctx, user_id):
         guild = ctx.message.guild.id
         member = str(cts.message.author)

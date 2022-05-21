@@ -3,6 +3,7 @@ import tickets
 import territory_battles
 import galactic_power
 import squads
+import mod_cog
 import config
 import new_help
 
@@ -35,6 +36,7 @@ bot.add_cog(tickets.Tickets(bot))
 bot.add_cog(territory_battles.TB(bot))
 bot.add_cog(galactic_power.Power(bot))
 bot.add_cog(squads.Squad(bot))
+bot.add_cog(mod_cog.Mods(bot))
 bot.remove_command('help')
 bot.add_cog(new_help.Help(bot))
 
