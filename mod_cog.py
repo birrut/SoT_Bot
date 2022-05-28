@@ -6,6 +6,7 @@ import os
 import discord
 from discord.ext import commands
 import config
+import helper
 
 color_dict = {1:'Grey', 2:'Green', 3:'Blue', 4:'Purple', 5:'Gold'}
 
@@ -101,20 +102,22 @@ class Mod():
         for stat in self.secondary_list:
             num_of_rolls += stat['roll']
             if stat['stat_id'] == 5:
-                num_speed_rolls += 1
-        self. possible = False
+                num_speed_rolls = stat['roll']
+        self.possible = False
         if num_speed_rolls > 0:
             self.possible = True
-        speed_rolls_remaining = 5 - num_speed_rolls
-        self.remaining_rolls = self.total_number_of_rolls - num_of_rolls
+        else:
+            self.chance_for_five = 0
+            return
+        speed_rolls_remaining = int(5 - num_speed_rolls)
+        self.remaining_rolls = int(self.total_number_of_rolls - num_of_rolls)
         try:
-            self.chance_for_five = round(pow(1 - pow(self.remaining_rolls, 3)/pow(self.remaining_rolls, 4), speed_rolls_remaining),2)
-        except ZeroDivisionError as e:
-            if num_speed_rolls == 5:
-                self.chance_for_five = 100
-            else:
-                self.chance_for_five = 0
+            self.chance_for_five = helper.cumulative(self.remaining_rolls, speed_rolls_remaining)
+            #print(self.chance_for_five)
 
+        except (ZeroDivisionError, TypeError) as e:
+            # This is for mods that have no remaining rolls left
+            self.chance_for_five = 0
     
     def get_display_name(self):
         for character in self.characters:
@@ -149,54 +152,6 @@ class Mod():
         secondary_dictionary['percent_of_max'] = percent
         return secondary_dictionary
 
-    def OLDupdate_secondary_list(self, secondary_json):
-        """This cannot be called before create_stat_dic"""
-        secondary_dic = {}
-        secondary_dic['id'] = secondary_json['stat']['unitStatId']
-        secondary_dic['value'] = secondary_json['stat']['statValueDecimal']
-        secondary_dic['unscaled_value'] = secondary_json['stat']['unscaledDecimalValue']
-        secondary_dic['rolls'] = secondary_json['statRolls']
-        
-        try:
-            secondary_dic['stat'] = self.stat_dic[secondary_dic['id']][0]
-            secondary_dic['suffix'] = self.stat_dic[secondary_dic['id']][1]
-            secondary_dic['roll_name'] = self.stat_dic[secondary_dic['id']][2]
-        except KeyError:
-            print ('up here')
-            print (secondary_dic['id'])
-            print (secondary_dic['value'])
-
-
-        if secondary_dic['suffix'] == '%':
-            secondary_dic['display_value'] = round(secondary_dic['unscaled_value']/1000000, 2)
-        else:
-            secondary_dic['display_value'] = round(secondary_dic['value']/10000)
-
-
-
-
-        max_str = secondary_dic['roll_name'] + '_max_roll'
-        if int(self.dot) == 5:
-            secondary_dic['avg_roll'] = round(float(secondary_dic['display_value'])/secondary_dic['rolls'], 2)
-            secondary_dic['max_roll'] = getattr(mstats, max_str)
-        elif int(self.dot) == 6:
-            increase = getattr(mstats, secondary_dic['roll_name'] + '_increase')
-            #secondary_dic['avg_roll'] = round((float(secondary_dic['display_value'])/secondary_dic['rolls'])*increase, 2)
-
-            secondary_dic['max_roll'] = round(getattr(mstats, max_str)*increase,2)
-        elif int(self.dot) < 5:
-            #print ("Why do you have this mod?")
-            #print (self.character)
-            secondary_dic['avg_roll'] = round(float(secondary_dic['display_value'])/secondary_dic['rolls'], 2)
-            secondary_dic['max_roll'] = getattr(mstats, max_str)
-
-
-        secondary_dic['avg_roll'] = round(float(secondary_dic['display_value'])/secondary_dic['rolls'], 2)
-        min_str = secondary_dic['roll_name'] + '_min_roll'
-        secondary_dic['min_roll'] = getattr(mstats, min_str)
-        secondary_dic['percent_of_max'] = round((secondary_dic['avg_roll']/secondary_dic['max_roll']) * 100)
-
-        self.secondary_list.append(secondary_dic)
 
 
     def create_stat_dic(self):
@@ -234,13 +189,18 @@ def make_call(player_id):
         return response.json()
 
 def order_mods(mod):
-    # return mod.chance_for_five
+
+    if mod.chance_for_five == 1:
+        return 0
+    else:
+        score = (mod.chance_for_five + mod.total_percent)/2
+    return score
     # return mod.total_percent + mod.chance_for_five
-    return mod.total_percent
+    # return mod.total_percent
 
 
 
-class Mods(commands.Cog):
+class ModPrinter(commands.Cog):
     """This is in beta. This helps with mods"""
     def __init__(self, bot):
         with open('data/characters.json', 'r') as data_file:
@@ -294,7 +254,7 @@ class Mods(commands.Cog):
 
     @commands.command(name="highest_mods")
     async def highest_mods(self, ctx, *args):
-        """This returns your mods with the highest percent rolls.
+        """This returns your mods with the highest percent rolls and the highest chance of getting 5 speed hits.
         You can pass a number of mods you would like, or it will default to 5.
         You can also use the require key word to specify that the mods returned have a specific secondary stat.
         e.g.: $highest_mods 15 require speed"""
@@ -345,7 +305,8 @@ class Mods(commands.Cog):
             for mod in mod_list:
                 for stat in mod.secondary_list:
                     if stat['name'] == filter_attr:
-                        filter_mod_list.append(mod)
+                        if mod.remaining_rolls != 0.0:
+                            filter_mod_list.append(mod)
 
             sorted_list = sorted(filter_mod_list, key=order_mods)
         else:
@@ -372,13 +333,11 @@ class Mods(commands.Cog):
             emb_list.append(emb)
 
         for emb in emb_list:
+            #print(emb.field)
             emb.set_thumbnail(url='attachment://bot.png')
             image = discord.File('bot.png', filename='bot.png')
             await ctx.send(file=image, embed=emb)
         # await ctx.send(out_str)
-
-
-
 
 
 

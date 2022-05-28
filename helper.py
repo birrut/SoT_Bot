@@ -1,4 +1,5 @@
 import datetime
+import math
 
 def get_growth_list(gp_list):
     """takes a list of gp and returns list of growth"""
@@ -7,6 +8,28 @@ def get_growth_list(gp_list):
         out_list.append(gp_list[day_index] - gp_list[day_index - 1])
 
     return out_list
+
+def binomial(n,x,p):
+    """Binomial probability function."""
+    try:
+        P = (math.factorial(n)/(math.factorial(x)*math.factorial(n-x)))*pow(p,x)*pow((1-p), n-x)
+    except ValueError as e:
+        # print(n,x,p,e)
+        P=0
+    return P
+
+def cumulative(n, x, p=.25, digits=2):
+    """n is remaining number of hits, x is number to 5 speed hits,
+    p is .25"""
+    # print(f"Hits remaining: {n}, Speed hits: {5-x}")
+    poss_list = []
+    for option in range(x):
+        # print(option)
+        poss_list.append(binomial(n, option, p))
+    # if x == 1:
+        #print(f"{n}, {x}, {1 - sum(poss_list)}")
+    return round(1 - sum(poss_list),2)
+
 
 class Member():
     """ This should take 1 member's json and create a member object"""

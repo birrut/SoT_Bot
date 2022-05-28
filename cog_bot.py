@@ -36,7 +36,7 @@ bot.add_cog(tickets.Tickets(bot))
 bot.add_cog(territory_battles.TB(bot))
 bot.add_cog(galactic_power.Power(bot))
 bot.add_cog(squads.Squad(bot))
-bot.add_cog(mod_cog.Mods(bot))
+bot.add_cog(mod_cog.ModPrinter(bot))
 bot.remove_command('help')
 bot.add_cog(new_help.Help(bot))
 
