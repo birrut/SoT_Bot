@@ -107,6 +107,12 @@ class Power(commands.Cog):
         out_str = ''
         multiple = False
         str_list = []
+        first_day = date_list[0]
+        last_day = date_list[-1]
+        # print(first_day, last_day)
+        diff = last_day - first_day
+        num_days = diff.days
+        # print(diff.days)
         for ite in range(len(date_list)):
             month = date_list[ite].month
             day = date_list[ite].day
@@ -119,8 +125,8 @@ class Power(commands.Cog):
                 out_str = ''
                 str_list.append(first_str)
 
-        out_str += "Total growth over the last {} days: {}.\n".format(len(growth_list), format(sum(growth_list), ',d'))
-        out_str += f"Average daily growth: {format(round(sum(growth_list)/len(growth_list)), ',d')}"
+        out_str += "Total growth over the last {} days: {}.\n".format(num_days, format(sum(growth_list), ',d'))
+        out_str += f"Average daily growth: {format(round(sum(growth_list)/num_days), ',d')}"
 
         if multiple:
             str_list.append(out_str)
