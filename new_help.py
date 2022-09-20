@@ -33,8 +33,10 @@ class Help(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    #@commands.hybrid_command(name="help", with_app_command=True)
     # @commands.bot_has_permissions(add_reactions=True,embed_links=True)
-    async def help(self, ctx, *input):
+    #I don't think input works in slash commands. We should probably create a list of modules and put it in as possible inputs
+    async def help(self, ctx: commands.Context, *input):
         """Shows all modules of that bot"""
         prefix = "$"
         version = config.BOT_VERSION

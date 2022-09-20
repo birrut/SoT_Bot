@@ -1,6 +1,8 @@
-*.json
 *.png
 *.jpeg
 config.py
 nohup.out
 setup.cfg
+bot.log
+backup/
+utility_scripts/

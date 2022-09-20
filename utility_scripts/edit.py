@@ -17,10 +17,10 @@ def rewrite(f):
             d['average'] = average
             out_dictionary_list.append(d)
     return out_dictionary_list
-    
+
         
 file_name = '884464695476625428.json'
-new_data = rewrite(file_name)
+#new_data = rewrite(file_name)
 
 with open(file_name, 'w') as output:
     output.write(json.dumps(new_data))

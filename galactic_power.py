@@ -2,6 +2,7 @@ import json
 import datetime
 import discord
 from discord.ext import commands
+from discord import app_commands
 import matplotlib as mpl
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -69,10 +70,14 @@ class Power(commands.Cog):
             ret_number = round(number)
         return "{}{}{}".format(sign, ret_number, f_list[mag])
 
-    @commands.group(invoke_without_command=True)
-    async def power(self, ctx, days=7):
-        """Master command for Galactic Power.
-        If called alone, gives history of gp. """
+    #@commands.group(invoke_without_command=True)
+    @commands.hybrid_group(name="power", with_app_command=True)
+    async def power(self, ctx: commands.Context):
+        pass
+
+    @power.command(name="history", with_app_command=True)
+    async def history(self, ctx: commands.Context, days: int=7):
+        """Give history of guild GP """
         # {player: gp}
         # player_gp_list = []
         total_gp = []
@@ -135,8 +140,8 @@ class Power(commands.Cog):
         else:
             await ctx.send(out_str)
 
-    @power.group(invoke_without_command=True)
-    async def guild(self, ctx):
+    @power.command(name="guild", with_app_command=True)
+    async def guild(self, ctx: commands.Context):
         """Sends graph of of guild gp"""
         # Should add text somewhere saying how long we are graphing. Also, what is that weird
         # text in the top left of the graph?
@@ -169,8 +174,9 @@ class Power(commands.Cog):
             out_str += "{}\n".format(day)
         # await ctx.send(out_str)
 
-    @guild.command()
-    async def growth(self, ctx, *args):
+    @power.command(name="growth", with_app_command=True)
+    @app_commands.choices(interval=[app_commands.Choice(name="Weeks", value="week"), app_commands.Choice(name="Days", value="days")])
+    async def growth(self, ctx: commands.Context, interval: app_commands.Choice[str], number: int=7):
         """Graph all guild users growth for given number of days or weeks.
         Add the week argument to show growth by week instead of day. Defaults to 7 days or 2 weeks"""
         print("This is another test")
@@ -178,27 +184,17 @@ class Power(commands.Cog):
         date_list = []
         export_file_name = 'growth_graph.png'
         name_list = []
+        days = number
         # should be name: growth list
-        days = None
         member_list = []
-        if "week" in args or 'weekly' in args or 'weeks' in args:
+        if interval.value == 'week':
+            print ('here in weekly')
             graph_by_week = True
             week = 7
         else:
             graph_by_week = False
             week = 1
-        for arg in args:
-            try:
-                days = int(arg)
-                if not graph_by_week:
-                    days += 1
-            except ValueError:
-                pass
-        if not days:
-            if graph_by_week:
-                days = 2
-            else:
-                days = 8
+            days += 1
 
         print("days from args {}".format(days))
         with open(file_name, 'r') as guild_file:
@@ -300,8 +296,8 @@ class Power(commands.Cog):
             f = discord.File(image, filename=export_file_name)
         await ctx.send(file=f)
 
-    @power.group(invoke_without_command=True)
-    async def user(self, ctx, *args):
+    @power.command(name="user", with_app_command=True)
+    async def user(self, ctx: commands.Context, user: str, days: int=7):
         """Gives the growth for the specified user"""
         file_name = 'data/' + str(ctx.message.guild.id) + 'guild_data.json'
         out_str = ''
@@ -309,18 +305,11 @@ class Power(commands.Cog):
         members = []
         name_list = []
         name_dict = {}
-        days = None
 
-        for arg in args:
-            try:
-                days = int(arg)
-            except ValueError:
-                command_list.append(arg)
-        if not days:
-            days = 7
         # This is to add one more day for growth
         days += 1
-        user_name = ' '.join(command_list)
+        #user_name = ' '.join(command_list)
+        user_name = user
 
         with open(file_name, 'r') as guild_file:
             guild_data = json.loads(guild_file.read())
@@ -369,6 +358,7 @@ class Power(commands.Cog):
                         date_list.append(date)
 
             growth_list = helper.get_growth_list(gp_list)
+            num_days = date_list[-1] - date_list[-0]
             date_list.pop(0)
             gp_list.pop(0)
 
@@ -382,7 +372,7 @@ class Power(commands.Cog):
                     out_list.append(out_str)
                     out_str = ''
 
-            out_str += f"Total growth over the last {len(growth_list)} days: {format(sum(growth_list), ',d')}."
+            out_str += f"Total growth over the last {len(growth_list)} days: {format(sum(growth_list), ',d')}. Average daily growth: {format(round(sum(growth_list)/num_days.days), ',d')}"
             out_list.append(out_str)
 
             return out_list
@@ -392,6 +382,3 @@ class Power(commands.Cog):
             for message in out:
                 await ctx.send(message)
 
-    # @user.command()
-    async def graph(self, ctx, *args):
-        print(args)

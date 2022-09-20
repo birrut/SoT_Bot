@@ -1,6 +1,7 @@
 import json
 import re
 from discord.ext import commands
+import discord
 
 
 class TB(commands.Cog):
@@ -34,23 +35,26 @@ class TB(commands.Cog):
 
         return int(output_amount)
 
-    @commands.command(name="holding")
-    async def holding(self, ctx):
-        """Use this to reserve GP for TB deployment.
-        If you want to add for somebody else, use '$holding 123456 for member' """
+    #@commands.command(name="holding")
+    @commands.hybrid_command(name="holding", with_app_command=True)
+    async def holding(self, ctx: commands.Context, gp: str, user: str=None):
+        """Use this to reserve GP for TB deployment. """
         tb_file = 'data/tb' + str(ctx.message.guild.id) + ".json"
-        message_word_list = ctx.message.content.split()
+        #message_word_list = ctx.message.content.split()
         # member = str(ctx.message.author).split('#')[0]
         member = str(ctx.message.author.display_name)
-        if 'for' in message_word_list:
-            ind_number = message_word_list.index('for')
-            member = ctx.message.content.split('for ')[1]
-            message_word_list = message_word_list[:ind_number]
+        if user:
+            member = user
+        #if 'for' in message_word_list:
+        #    ind_number = message_word_list.index('for')
+        #    member = ctx.message.content.split('for ')[1]
+        #    message_word_list = message_word_list[:ind_number]
 
-        if len(message_word_list) > 2:
-            out_number = self.process_amount(message_word_list[1], message_word_list[2:])
-        else:
-            out_number = self.process_amount(message_word_list[1])
+        #if len(message_word_list) > 2:
+        #    out_number = self.process_amount(message_word_list[1], message_word_list[2:])
+        #else:
+        #    out_number = self.process_amount(message_word_list[1])
+        out_number = self.process_amount(gp)
 
         try:
             with open(tb_file, 'r') as in_data:
@@ -69,8 +73,9 @@ class TB(commands.Cog):
         out_str = "Adding {} for member {}".format(write_number, member)
         await ctx.send(out_str)
 
-    @commands.command(name="list")
-    async def list(self, ctx):
+    #@commands.command(name="list")
+    @commands.hybrid_command(name="list", with_app_command=True)
+    async def list(self, ctx: commands.Context):
         """Lists all members who have reserved GP and the total."""
         total_list = []
         out_str = ''
@@ -90,8 +95,9 @@ class TB(commands.Cog):
         print(sum(total_list))
 
     @commands.has_role("Officer")
-    @commands.command(name="reset")
-    async def reset(self, ctx):
+    #@commands.command(name="reset")
+    @commands.hybrid_command(name="reset", with_app_command=True)
+    async def reset(self, ctx: commands.Context):
         """Resets reserved GP.
         Should be called after every TB phase, can only be called by members with the role Officer"""
         tb_file = 'data/tb' + str(ctx.message.guild.id) + ".json"
@@ -103,21 +109,26 @@ class TB(commands.Cog):
         out_message = "The reserved GP has been reest."
         await ctx.send(out_message)
 
-    @commands.command(name="remove")
-    async def remove(self, ctx):
+    #@commands.command(name="remove")
+    @commands.hybrid_command(name="remove", with_app_command=True)
+    async def remove(self, ctx: commands.context, user: str=None):
         """Removes the reserved GP for this user.
         Or can be run for a different user with '$remove for user'"""
         out_list = []
         list_length = 0
         tb_file = 'data/tb' + str(ctx.message.guild.id) + ".json"
-        message_word_list = ctx.message.content.split()
         member = str(ctx.message.author.display_name)
         lower_member = member.casefold()
-        if 'for' in message_word_list:
-            ind_number = message_word_list.index('for')
-            member = ctx.message.content.split('for ')[1]
-            lower_member = ctx.message.content.split('for ')[1].casefold()
-            message_word_list = message_word_list[:ind_number]
+        if user:
+            member = user
+            lower_member = member.casefold()
+
+        #message_word_list = ctx.message.content.split()
+        #if 'for' in message_word_list:
+        #    ind_number = message_word_list.index('for')
+        #    member = ctx.message.content.split('for ')[1]
+        #    lower_member = ctx.message.content.split('for ')[1].casefold()
+        #    message_word_list = message_word_list[:ind_number]
 
         with open(tb_file, 'r') as in_data:
             data = json.loads(in_data.read())

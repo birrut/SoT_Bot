@@ -18,9 +18,9 @@ class Tickets(commands.Cog):
     """Handles all the commands for managing daily tickets"""
     def __init__(self, bot):
         self.bot = bot
-        self.schedule_ticket_call.start()
         # At some point, this should be in a config file
         self.server_list = ['884464695476625428', '888611226593136690']
+        #self.server_list = ['888611226593136690']
         self.server_data_list = []
         for server in self.server_list:
             self.server_data = {}
@@ -33,6 +33,10 @@ class Tickets(commands.Cog):
             self.server_data_list.append(self.server_data)
 
         print('Tickets cog initialized')
+    async def cog_load(self):
+        self.schedule_ticket_call.start()
+        #self.session = aiohttp.ClientSession()
+            #self.bot.loop.create_task(self.schedule_ticket_call())
 
     def get_proper_name(self, name, dic_list):
         """Gets proper name from command
@@ -287,6 +291,7 @@ class Tickets(commands.Cog):
         """Gets the daily average."""
 
         # This is UTC time
+        print("In get_daily_average")
         guild_reset_time = datetime.time(hour=1, minute=30)
         # reset_time = datetime.datetime.combine(datetime.date.today(), guild_reset_time)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
@@ -370,33 +375,35 @@ class Tickets(commands.Cog):
         if avg > avg_tickets:
             await channel.send("New average record!")
         # await channel.send(out_str)
-
-    @commands.command(name="history")
-    async def history(self, ctx, *args):
+    @commands.hybrid_command(name="history", with_app_command=True)
+    #@commands.command(name="history")
+    async def history(self, ctx: commands.Context, user: str, days: int):
         """History for the specified user. Can take any days or gives 7 by default"""
         in_file = 'data/' + str(ctx.message.guild.id) + ".json"
         not_name_list = ['utc time', 'date', 'guild name', 'average', 'total']
         command_list = []
-        days = None
         out_str = ''
-        for arg in args:
-            try:
-                days = int(arg)
-            except ValueError:
-                command_list.append(arg)
+        #days = int(days)
 
-        if not days:
-            days = 7
+        #for arg in args:
+        #    try:
+        #        days = int(arg)
+        #    except ValueError:
+        #        command_list.append(arg)
 
-        if len(args) == 0:
-            await ctx.send("Please specify a user")
-            return
+        #if not days:
+        #    days = 7
+
+        #if len(args) == 0:
+        #    await ctx.send("Please specify a user")
+        #    return
 
         with open(in_file, 'r') as in_data:
             json_list = json.loads(in_data.read())
         test_members = json_list[-1]
 
-        in_str = ' '.join(command_list)
+        #in_str = ' '.join(command_list)
+        in_str = user
         try:
             player_id, name = self.get_proper_name(in_str, test_members)
         except TypeError:
@@ -422,6 +429,7 @@ class Tickets(commands.Cog):
             days = len(json_list)
 
         def build_str(user_list):
+            out_list = []
             user_days = days
             history_list = []
             date_list = []
@@ -440,16 +448,22 @@ class Tickets(commands.Cog):
                 num = history_list[date_list.index(day)]
                 avg = format(int(sum(history_list)/len(history_list)), ',d')
                 out_str += f"{day.month}-{day.day}: {num}\n"
+                if len(out_str) > 1900:
+                    out_list.append(out_str)
+                    out_str = ''
             out_str += f"The average tickets for {name} over the last {user_days} days is: {avg}"
-            return out_str
+            out_list.append(out_str)
+            return out_list
 
         for user in user_list:
             out = build_str(user)
-            await ctx.send(out)
+            for out_str in out:
+                await ctx.send(out_str)
 
-    @commands.command(name="average")
+    #@commands.command(name="average")
+    @commands.hybrid_command(name="average", with_app_command=True)
     # @commands.hybrid_command()
-    async def average(self, ctx):
+    async def average(self, ctx: commands.Context, days: int = 7):
         """Sorts members by tickets averaged over the given number of days.
         Defaults to 7"""
         in_file = 'data/' + str(ctx.message.guild.id) + ".json"
@@ -514,6 +528,7 @@ class Tickets(commands.Cog):
 
         for dic in dict_list:
             # Sorts each dictionary by player's average tickets
+            out_list = []
             dic = dict(sorted(dic.items(), key=lambda item: item[1]))
             for player_id in dic:
                 out_str += f"{name_dict[player_id]}: {str(dic[player_id][0])}\n"
@@ -522,12 +537,22 @@ class Tickets(commands.Cog):
                     # print(out_str[-2:])
                     out_str = out_str[:-1]
                     out_str += f" (I only have {dic[player_id][1]} days) \n"
+                    if len(out_str) > 990:
+                        out_list.append(out_str)
+                        out_str = ''
                 # else:
                 #    out_str +='\n'
             if out_str == '':
                 out_str = "Nobody averaged {}".format(str_list[ite])
-            emb.add_field(name=f"\n**Members who averaged {str_list[ite]}:**\n", value=out_str, inline=False)
+            out_list.append(out_str)
             out_str = ''
+            multiple = False
+            for out in out_list:
+                if multiple:
+                    emb.add_field(name=f"\u200b", value=out, inline=False)
+                else:
+                    emb.add_field(name=f"\n**Members who averaged {str_list[ite]}:**\n", value=out, inline=False)
+                multiple = True
             ite += 1
 
         # return out_str
@@ -535,13 +560,14 @@ class Tickets(commands.Cog):
         emb.set_thumbnail(url='attachment://bot.png')
         image = discord.File('bot.png', filename='bot.png')
         await ctx.send(file=image, embed=emb)
-
-    @commands.command(name="average_history")
-    async def average_list(self, ctx):
+    
+    @commands.hybrid_command(name="average_history", with_app_command=True)
+    #@commands.command(name="average_history")
+    async def average_list(self, ctx: commands.Context, days: int = 7):
         """returns the total average with a graph.
         Defaults to 7, but can take any number of days"""
-        message_word_list = ctx.message.content.split()
-        out_number = 7
+        #message_word_list = ctx.message.content.split()
+        out_number = days
         str_list = []
         out_str = ''
         out_list = []
@@ -551,15 +577,15 @@ class Tickets(commands.Cog):
         with open(in_file, 'r') as in_data:
             data = json.loads(in_data.read())
 
-        if len(message_word_list) > 1:
-            try:
-                out_number = int(message_word_list[1])
-                if out_number > len(data):
-                    out_number = len(data)
-                # out_str = "Trying to get the average for the last {} days.\n".format(out_number)
-            except ValueError:
-                out_str = "Sorry, that isn't a number, defaulting to 7\n"
-                out_number = 7
+       # if len(message_word_list) > 1:
+       #     try:
+       #         out_number = int(message_word_list[1])
+       #         if out_number > len(data):
+       #             out_number = len(data)
+       #         # out_str = "Trying to get the average for the last {} days.\n".format(out_number)
+       #     except ValueError:
+       #         out_str = "Sorry, that isn't a number, defaulting to 7\n"
+       #         out_number = 7
 
         with open(in_file, 'r') as in_data:
             data = json.loads(in_data.read())
@@ -633,7 +659,7 @@ class Tickets(commands.Cog):
             f = discord.File(image, filename="graph.png")
 
         await ctx.send(file=f)
-        emb = discord.Embed(title=f"Ticket History Average for {out_number} days", colo=discord.Color.green())
+        emb = discord.Embed(title=f"Ticket History Average for {out_number} days", color=discord.Color.green())
 
         if multiple:
             str_list.append((out_str, month))
@@ -647,26 +673,31 @@ class Tickets(commands.Cog):
             await ctx.send(embed=emb)
         else:
             # month = calendar.month_name[int(out_str.split('-')[0])]
-            emb.add_field(name="Daily Average:", value=out_str, inline=False)
+            emb.add_field(name="Daily Average:", value=f'```{out_str}```', inline=False)
+            emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
             await ctx.send(embed=emb)
 
-    @commands.has_role("Officer")
-    @commands.command(name="check_tickets")
-    async def check_tickets(self, ctx=None, channel=None):
+
+    #@commands.has_role("Officer")
+    #@commands.command(name="check_tickets")
+    async def check_tickets(self, channel=None):
         """This is called automatically. It gets the ticket data, saves it in two places, and prints.
         This can also be called manually by an officer if there was an error."""
 
         print('Checking Tickets...')
         URL = 'https://swgoh.shittybots.me/api/guild/'
         headers = {'shittybot': config.S_AUTH}
-        try:
-            channel = ctx.channel
-        except AttributeError:
-            channel = channel
+        print('here')
+        #try:
+        #    channel = ctx.channel
+        #except AttributeError:
+        #    channel = channel
+        #print('after first error')
 
         final_url = URL + config.ALLY_CODE
         try:
-            response = requests.get(final_url, headers=headers, timeout=15)
+            response = requests.get(final_url, headers=headers, timeout=30)
+            print('making call')
         except Timeout:
             try:
                 await channel.send("It seems like the api is having timeout issues, please try again later")
@@ -688,6 +719,14 @@ class Tickets(commands.Cog):
         date = datetime.datetime.utcnow()
         await self.get_daily_average(channel, date)
 
+    #@commands.hybrid_command(name="add_tickets", with_app_command=True)
+    async def add_tickets(self, ctx: commands.Context):
+        date = datetime.datetime(2022, 9, 18, 1, 29, 30)
+        channel = ctx.channel
+        await self.get_daily_average(channel, date)
+
+
+    #@tasks.loop(hours=24)
     @tasks.loop(hours=24)
     async def schedule_ticket_call(self):
         print("Making ticket_call")
@@ -696,25 +735,32 @@ class Tickets(commands.Cog):
         for server in self.server_data_list:
             channel_number = int(server['channel'])
             channel = self.bot.get_channel(channel_number)
-            self.channel = channel
-            try:
-                # await channel.send('we should run the check tickets command now!')
-                await self.check_tickets(channel=channel)
-            except AttributeError as e:
-                print('maybe wrong guild? This is in the if statement')
-                raise e
+            print(channel)
+            print("Before await")
+            await self.check_tickets(channel=channel)
+            print("After await")
+            #try:
+            #    # await channel.send('we should run the check tickets command now!')
+            #    print("Before await")
+            #    await self.check_tickets(channel=channel)
+            #    print("After await")
+            #except AttributeError as e:
+            #    print('maybe wrong guild? This is in the if statement')
+            #    raise e
 
     @schedule_ticket_call.before_loop
     async def before_ticket_loop(self):
         print('waiting...')
-        await self.bot.wait_until_ready()
+        #await self.bot.wait_until_ready()
         guild_reset_time = datetime.time(hour=1, minute=30)
-        # guild_reset_time = datetime.time(hour = 22, minute = 31)
+        #guild_reset_time = datetime.time(hour = 3, minute = 54)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
         # self.reset_time = reset_time
-        run_time = reset_time - datetime.timedelta(seconds=30)
+        run_time = reset_time - datetime.timedelta(minutes=1)
         now = datetime.datetime.utcnow()
         print(run_time)
         print(f"Waiting for {(run_time - now).seconds} seconds.")
+        print(f"Current time: {datetime.datetime.utcnow()}")
+        print(f"Reset time: {reset_time}")
         # print((reset_time-now).seconds)
         await asyncio.sleep((run_time - now).seconds)

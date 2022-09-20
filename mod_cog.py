@@ -62,9 +62,9 @@ class Mod():
             self.secondary_list.append(new_stat)
 
 
-        self.get_display_name()
         self.update_total_percent()
         self.get_chance()
+        self.get_display_name()
 
     def __repr__(self):
         """Returns string of mod"""
@@ -108,7 +108,6 @@ class Mod():
             self.possible = True
         else:
             self.chance_for_five = 0
-            return
         speed_rolls_remaining = int(5 - num_speed_rolls)
         self.remaining_rolls = int(self.total_number_of_rolls - num_of_rolls)
         try:
@@ -120,6 +119,7 @@ class Mod():
             self.chance_for_five = 0
     
     def get_display_name(self):
+        self.character_display_name = "New Character"
         for character in self.characters:
             if character['base_id'] == self.character:
                 self.character_display_name = character['name']
@@ -145,7 +145,8 @@ class Mod():
             value = secondary_dictionary['display_value']
         avg = round(float(value)/int(secondary_dictionary['roll']),2)
         secondary_dictionary['avg_roll'] = avg
-        percent = round(avg/stats['max'],2)
+        percent = round((avg-stats['min'])/(stats['max']-stats['min']),2)
+        #percent = round(avg/stats['max'],2)
         if type(stats) is dict:
             secondary_dictionary.update(stats)
 
@@ -197,7 +198,16 @@ def order_mods(mod):
     return score
     # return mod.total_percent + mod.chance_for_five
     # return mod.total_percent
+def order_mods_hits(mod):
+    if mod.chance_for_five == 1:
+        return 0
+    else:
+        score = mod.chance_for_five
+    return score
 
+def order_mods_percent(mod):
+    score = mod.total_percent
+    return score
 
 
 class ModPrinter(commands.Cog):
@@ -254,12 +264,14 @@ class ModPrinter(commands.Cog):
 
     @commands.command(name="highest_mods")
     async def highest_mods(self, ctx, *args):
-        """This returns your mods with the highest percent rolls and the highest chance of getting 5 speed hits.
-        You can pass a number of mods you would like, or it will default to 5.
+        """This returns your highest mods. You can pass a number of mods you would like, or it will default to 5.
         You can also use the require key word to specify that the mods returned have a specific secondary stat.
-        e.g.: $highest_mods 15 require speed"""
+        e.g.: $highest_mods require speed
+        This command has 3 different ways to sort. 'default' is the average of the chance to hit 5 speed rolls
+        and the percent of total rolls. You can also use 'hits' to sort by chance to hit 5 speed mods, or 'percent' to sort by percent of total rolls."""
         number_of_mods = 5
         Filter = False
+        sort = 'Default'
         attr_list = ['Speed', 'Defense', 'Offense', 'Potency', 'Tenacity', 'Protection', 'Cc']
         args = list(args)
         try:
@@ -279,8 +291,23 @@ class ModPrinter(commands.Cog):
                             filter_attr = 'Critical Chance'
                 if filter_attr == None:
                     await ctx.send(f"I don't recognize that attribute. Here are your choices: {' '.join(attr_list)}")
-
                     return
+
+            for arg in args:
+                if arg.casefold() == "Sort".casefold():
+                    sorter_index = args.index(arg) + 1
+                    sorter_command = args[sorter_index]
+                    if sorter_command.casefold() == "Percent".casefold():
+                        sort = "Percent"
+                    elif sorter_command.casefold() == "Hits".casefold():
+                        sort = "Hits"
+                    elif sorter_command.casefold() == "Default".casefold():
+                        sort = "Default"
+                    else:
+                        await ctx.send("I can only sort by Percent, Hits, or Default")
+                        return
+
+
 
         with open('data/users.json', 'r') as user_file:
             user_list = json.loads(user_file.read())
@@ -307,10 +334,21 @@ class ModPrinter(commands.Cog):
                     if stat['name'] == filter_attr:
                         if mod.remaining_rolls != 0.0:
                             filter_mod_list.append(mod)
+            if sort == "Default":
+                sorted_list = sorted(filter_mod_list, key=order_mods)
+            elif sort == "Hits":
+                sorted_list = sorted(filter_mod_list, key=order_mods_hits)
+            elif sort == "Percent":
+                sorted_list = sorted(filter_mod_list, key=order_mods_percent)
 
-            sorted_list = sorted(filter_mod_list, key=order_mods)
         else:
-            sorted_list = sorted(mod_list, key=order_mods)
+            if sort == "Default":
+                sorted_list = sorted(mod_list, key=order_mods)
+            elif sort == "Hits":
+                sorted_list = sorted(mod_list, key=order_mods_hits)
+            elif sort == "Percent":
+                sorted_list = sorted(mod_list, key=order_mods_percent)
+
         sorted_list.reverse()
         if Filter:
             emb = discord.Embed(title=f'Highest Percent Mods with {filter_attr}', color=discord.Color.blue())
