@@ -186,7 +186,7 @@ class Tickets(commands.Cog):
             out_str = "No Day Removed"
         await ctx.send(out_str)
 
-    @commands.command("rerun")
+    #@commands.command("rerun")
     async def rerun(self, ctx, message_id):
         """This is for if the daily ticket call didn't work, but Bobba's bot got called.
         Pass id of Bobba's message. This might not work if there is a new person since last ticket check"""
@@ -292,7 +292,8 @@ class Tickets(commands.Cog):
 
         # This is UTC time
         print("In get_daily_average")
-        guild_reset_time = datetime.time(hour=1, minute=30)
+        #guild_reset_time = datetime.time(hour=1, minute=30)
+        guild_reset_time = datetime.time(hour=23, minute=30)
         # reset_time = datetime.datetime.combine(datetime.date.today(), guild_reset_time)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
 
@@ -321,21 +322,26 @@ class Tickets(commands.Cog):
 
         def sort_func(user):
             return user.tickets
+        num_of_600 = 0
         member_list.sort(key=sort_func)
         for member in member_list:
             out_str += f"`{member.tickets}`: {member.name}\n"
             out_dict[member.id] = [member.name, member.tickets]
+            if member.tickets == 600:
+                num_of_600 += 1
             # out_dict[member.name] = member.tickets
 
         total = sum(member.tickets for member in member_list)
         avg = round(total/len(member_list))
         out_dict['total'] = total
         out_dict['average'] = avg
+        out_dict['num_600'] = num_of_600
         with open(write_file, 'r') as inp:
             old_data = json.loads(inp.read())
         print(len(old_data))
         max_tickets = 0
         avg_tickets = 0
+        max_600 = 0
 
         for day in old_data:
             last_update = datetime.datetime.fromisoformat(day['date'])
@@ -349,6 +355,8 @@ class Tickets(commands.Cog):
                 max_tickets = day['total']
             if day['average'] > avg_tickets:
                 avg_tickets = day['average']
+            if day['num_600'] > max_600:
+                max_600 = day['num_600']
 
         writing = False
         old_data.append(out_dict)
@@ -362,6 +370,7 @@ class Tickets(commands.Cog):
 
         out_str += f"The average for today was: {avg}, the max average is {avg_tickets}\n"
         out_str += f"The total for today was: {total}, and the max total is {max_tickets}\n"
+        out_str += f"Members with 600: {num_of_600}, max number with 600: {max_600}"
 
         emb = discord.Embed(title=f'Daily Tickets for {guild_name}', description=out_str, color=discord.Color.blue())
         emb.set_thumbnail(url='attachment://bot.png')
@@ -380,7 +389,7 @@ class Tickets(commands.Cog):
     async def history(self, ctx: commands.Context, user: str, days: int):
         """History for the specified user. Can take any days or gives 7 by default"""
         in_file = 'data/' + str(ctx.message.guild.id) + ".json"
-        not_name_list = ['utc time', 'date', 'guild name', 'average', 'total']
+        not_name_list = ['num_600', 'utc time', 'date', 'guild name', 'average', 'total']
         command_list = []
         out_str = ''
         #days = int(days)
@@ -467,17 +476,19 @@ class Tickets(commands.Cog):
         """Sorts members by tickets averaged over the given number of days.
         Defaults to 7"""
         in_file = 'data/' + str(ctx.message.guild.id) + ".json"
+        print(in_file)
         out_str = ''
         message_word_list = ctx.message.content.split()
-        not_name_list = ['utc time', 'date', 'guild name', 'average', 'total']
-        if len(message_word_list) == 2:
-            try:
-                days_to_process = int(message_word_list[1])
-            except ValueError:
-                out_str = "Sorry, that isn't a number, defaulting to 7\n"
-                days_to_process = 7
-        else:
-            days_to_process = 7
+        not_name_list = ['num_600', 'utc time', 'date', 'guild name', 'average', 'total']
+        days_to_process = days
+        #if len(message_word_list) == 2:
+        #    try:
+        #        days_to_process = int(message_word_list[1])
+        #    except ValueError:
+        #        out_str = "Sorry, that isn't a number, defaulting to 7\n"
+        #        days_to_process = 7
+        #else:
+        #    days_to_process = 7
         id_list = []
         avg_dict = {}
         name_dict = {}
@@ -489,6 +500,7 @@ class Tickets(commands.Cog):
 
         with open(in_file, 'r') as in_data:
             dictionary_list = json.loads(in_data.read())
+        print(f"length of list is {len(dictionary_list)}")
         day_number = len(dictionary_list)
         for day in dictionary_list[-1:]:
             for key in day:
@@ -560,6 +572,11 @@ class Tickets(commands.Cog):
         emb.set_thumbnail(url='attachment://bot.png')
         image = discord.File('bot.png', filename='bot.png')
         await ctx.send(file=image, embed=emb)
+    @commands.hybrid_command(name="color", with_app_command=True)
+    async def color(self, ctx: commands.Context):
+        out_str = "```ansi\nthis should be normal  [0;31mthis should be red \n```"
+        await ctx.send(out_str)
+
     
     @commands.hybrid_command(name="average_history", with_app_command=True)
     #@commands.command(name="average_history")
@@ -590,6 +607,8 @@ class Tickets(commands.Cog):
         with open(in_file, 'r') as in_data:
             data = json.loads(in_data.read())
 
+        if out_number > len(data):
+            out_number = len(data)
         for day in data[-out_number:]:
             out_list.append(day['average'])
 
@@ -630,7 +649,10 @@ class Tickets(commands.Cog):
                 out_str += f"{two_digit_day}:▼{day['average']} "
 
             else:
-                out_str += f"{two_digit_day}: {day['average']} "
+                if day['average'] < 500:
+                    out_str += f"{two_digit_day}: [0;31m{day['average']}[0m "
+                else:
+                    out_str += f"{two_digit_day}: {day['average']} "
             end_of_month = False
         total = round(sum(out_list)/len(out_list))
         # out_str += ("\nThe average of the averages is {}.".format(total))
@@ -666,14 +688,15 @@ class Tickets(commands.Cog):
             for out_str in str_list:
                 # print(out_str)
                 month = calendar.month_name[out_str[1]]
-                new_str = f"```{out_str[0]}```"
+                new_str = f"```ansi\n{out_str[0]}```"
                 emb.add_field(name=f"{month}:", value=new_str, inline=False)
 
             emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
             await ctx.send(embed=emb)
         else:
             # month = calendar.month_name[int(out_str.split('-')[0])]
-            emb.add_field(name="Daily Average:", value=f'```{out_str}```', inline=False)
+            out_str = f"```ansi\n{out_str}\n```"
+            emb.add_field(name="Daily Average:", value=f'{out_str}', inline=False)
             emb.add_field(name="Average of averages:", value=f'```{total}```', inline=False)
             await ctx.send(embed=emb)
 
@@ -719,11 +742,18 @@ class Tickets(commands.Cog):
         date = datetime.datetime.utcnow()
         await self.get_daily_average(channel, date)
 
-    #@commands.hybrid_command(name="add_tickets", with_app_command=True)
+    @commands.hybrid_command(name="add_tickets", with_app_command=True)
     async def add_tickets(self, ctx: commands.Context):
-        date = datetime.datetime(2022, 9, 18, 1, 29, 30)
+        #date = datetime.datetime(2022, 9, 18, 1, 29, 30)
+        date = datetime.datetime.utcnow()
         channel = ctx.channel
         await self.get_daily_average(channel, date)
+    
+    @commands.has_role("Officer")
+    @commands.hybrid_command(name="get_tickets", with_app_command=True)
+    async def get_tickets(self, ctx: commands.Context):
+        await ctx.send("Checking tickets...")
+        await self.check_tickets(channel=ctx.channel)
 
 
     #@tasks.loop(hours=24)
@@ -752,7 +782,7 @@ class Tickets(commands.Cog):
     async def before_ticket_loop(self):
         print('waiting...')
         #await self.bot.wait_until_ready()
-        guild_reset_time = datetime.time(hour=1, minute=30)
+        guild_reset_time = datetime.time(hour=23, minute=30)
         #guild_reset_time = datetime.time(hour = 3, minute = 54)
         reset_time = datetime.datetime.combine(datetime.datetime.utcnow(), guild_reset_time)
         # self.reset_time = reset_time

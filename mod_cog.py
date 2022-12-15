@@ -380,7 +380,7 @@ class ModPrinter(commands.Cog):
 
 
 if __name__ == "__main__":
-    m_json = make_call(482764294)
+    m_json = make_call(config.ALLY_CODE)
     mod_list = []
     for mod in m_json['mods']:
         m = Mod(mod)

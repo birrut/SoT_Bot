@@ -14,8 +14,8 @@ class Member():
                 self.tickets = item['currentValue']
         self.gp = json['galacticPower']
 #My Server
-num_name = '888611226593136690guild_data.json'
-file_name = '888611226593136690.json'
+num_name = './discord_bot2/data/888611226593136690guild_data.json'
+file_name = './discord_bot2/data/888611226593136690.json'
 
 
 #Guild Server
@@ -68,7 +68,7 @@ guild_data.append(new_dict)
 #    new_list.append(new_day)
 
 
-with open(file_name, 'w') as out_file:
+with open(num_name, 'w') as out_file:
     print (len(guild_data))
     out_file.write(json.dumps(guild_data))
 
